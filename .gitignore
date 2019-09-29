@@ -1,0 +1,6 @@
+*.o
+*.d
+.vexriscvplatform.mk
+*.bin
+*.elf
+compile_commands.json
