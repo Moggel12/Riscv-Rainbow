@@ -34,8 +34,7 @@ include $(PQRISCV_DIR)/common/vexriscv.mk
 LIBHAL_SRC = \
 	$(PQRISCV_DIR)/common/hal-vexriscv.c \
 	$(PQRISCV_DIR)/mupq/common/fips202.c \
-	$(PQRISCV_DIR)/common/keccakf1600.c \
-	$(PQRISCV_DIR)/common/keccakf1600_asm.S \
+	$(PQRISCV_DIR)/mupq/common/keccakf1600.c \
 	nonrandombytes.c
 
 LIBHAL_OBJ = $(call objs,$(LIBHAL_SRC))
