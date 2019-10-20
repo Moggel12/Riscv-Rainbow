@@ -1,5 +1,6 @@
 CROSS_PREFIX ?= riscv64-unknown-elf
 CC            = $(CROSS_PREFIX)-gcc
+AR            = $(CROSS_PREFIX)-ar
 LD            = $(CROSS_PREFIX)-gcc
 OBJCOPY       = $(CROSS_PREFIX)-objcopy
 
@@ -44,7 +45,13 @@ vpath %.c $(PQRISCV_DIR)/common
 vpath %.S $(PQRISCV_DIR)/common
 vpath %.c $(PQRISCV_DIR)/mupq/common
 
-%.elf: $(LIBHAL_OBJ) $(PLATFORM_LINKDEP)
+%.a:
+	@echo -e "  AR\t\t  $@"
+	@$(AR) rcs $@ $(filter %.o,$^)
+
+libhal.a: $(LIBHAL_OBJ)
+
+%.elf: libhal.a $(PLATFORM_LINKDEP)
 	@echo -e "  LD\t\t  $@"
 	@$(LD) -o $@ $(LDFLAGS) $(filter %.o,$^) $(filter %.a,$^)
 
@@ -61,7 +68,7 @@ vpath %.c $(PQRISCV_DIR)/mupq/common
 	@$(CC) -c -o $@ $(CFLAGS) $<
 
 clean:
-	rm -f *.o *.d *.elf *.bin .vexriscvplatform.mk
+	rm -f *.o *.d *.elf *.bin *.a .vexriscvplatform.mk
 
 .SECONDARY:
 
