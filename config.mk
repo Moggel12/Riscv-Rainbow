@@ -7,7 +7,7 @@ PQRISCV_DIR ?= ../pqriscv
 
 VEXRISCV_PLATFORM ?= pqvexriscvsim
 
-objs = $(notdir $(patsubst %.c,%.o,$(patsubst %.S,%.o,$(1))))
+objs = $(notdir $(patsubst %.c,%.c.o,$(patsubst %.S,%.S.o,$(1))))
 
 CFLAGS  += -O3 -g3
 CFLAGS  += \
@@ -52,12 +52,12 @@ vpath %.c $(PQRISCV_DIR)/mupq/common
 	@echo -e "  OBJCOPY\t  $@"
 	@$(OBJCOPY) -Obinary $^ $@
 
-%.o: %.c
-	@echo -e "  CC\t  $@"
+%.c.o: %.c
+	@echo -e "  CC\t\t  $@"
 	@$(CC) -c -o $@ $(CFLAGS) $<
 
-%.o: %.S
-	@echo -e "  CC\t  $@"
+%.S.o: %.S
+	@echo -e "  CC\t\t  $@"
 	@$(CC) -c -o $@ $(CFLAGS) $<
 
 clean:
