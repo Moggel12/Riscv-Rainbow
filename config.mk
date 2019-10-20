@@ -10,7 +10,11 @@ VEXRISCV_PLATFORM ?= pqvexriscvsim
 
 objs = $(notdir $(patsubst %.c,%.c.o,$(patsubst %.S,%.S.o,$(1))))
 
+ifdef DEBUG
+CFLAGS  += -Og -g3
+else
 CFLAGS  += -O3 -g3
+endif
 CFLAGS  += \
 				-Wall -Wextra -Wimplicit-function-declaration \
 				-Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes \
