@@ -8,7 +8,6 @@ PQRISCV_DIR ?= ../pqriscv
 VEXRISCV_PLATFORM ?= pqvexriscvsim
 
 objs = $(notdir $(patsubst %.c,%.o,$(patsubst %.S,%.o,$(1))))
-upper = $(shell echo '$(1)' | tr '[:lower:]' '[:upper:]')
 
 CFLAGS  += -O3 -g3
 CFLAGS  += \
@@ -47,7 +46,7 @@ vpath %.c $(PQRISCV_DIR)/mupq/common
 
 %.elf: $(LIBHAL_OBJ) $(PLATFORM_LINKDEP)
 	@echo -e "  LD\t\t  $@"
-	@$(LD) -o $@ $(LDFLAGS) $($(call upper,$(@:.elf=))_OBJ) $(LIBHAL_OBJ)
+	@$(LD) -o $@ $(LDFLAGS) $(filter %.o,$^) $(filter %.a,$^)
 
 %.bin: %.elf
 	@echo -e "  OBJCOPY\t  $@"
