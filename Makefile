@@ -1,3 +1,7 @@
+ifdef SRCDIR
+
+VPATH = $(SRCDIR)
+
 # Add your targets here
 TARGETS = demo.bin
 
@@ -9,9 +13,34 @@ include config.mk
 # additional dependencies for your the target TARGETNAME.elf file (just
 # define the dependencies, a generic rule for .elf target exists in
 # config.mk).
-DEMO_SRC = ./src/demo.c
+DEMO_SRC = src/demo.c
 DEMO_OBJ = $(call objs,$(DEMO_SRC))
-demo.elf: $(DEMO_OBJ)
+demo.elf: $(DEMO_OBJ) libhal.a
 
-OBJ := $(DEMO_OBJ) $(LIBHAL_OBJ)
+OBJ += $(DEMO_OBJ)
+
+# Include generated dependencies
 -include $(OBJ:.o=.d)
+
+else
+###############################
+# Out-of-tree build mechanism #
+###############################
+.SUFFIXES:
+
+OBJDIR := build
+
+.PHONY: $(OBJDIR)
+$(OBJDIR): %:
+	+@[ -d $@ ] || mkdir -p $@
+	+@$(MAKE) --no-print-directory -r -I$(CURDIR) -C $@ -f $(CURDIR)/Makefile SRCDIR=$(CURDIR) $(MAKECMDGOALS)
+
+Makefile : ;
+%.mk :: ;
+% :: $(OBJDIR) ;
+
+.PHONY: clean
+clean:
+	rm -rf $(OBJDIR)
+
+endif

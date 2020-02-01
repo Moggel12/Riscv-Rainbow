@@ -1,88 +1,112 @@
+ifndef _CONFIG
+_CONFIG :=
+
+###############
+# Some Macros #
+###############
+objs = $(addsuffix .o,$(1))
+cursubdir = $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
+
+#####################
+# Compiler settings #
+#####################
+
+Q ?= @
 CROSS_PREFIX ?= riscv64-unknown-elf
-CC            = $(CROSS_PREFIX)-gcc
-AR            = $(CROSS_PREFIX)-ar
-LD            = $(CROSS_PREFIX)-gcc
-OBJCOPY       = $(CROSS_PREFIX)-objcopy
+CC := $(CROSS_PREFIX)-gcc
+AR := $(CROSS_PREFIX)-ar
+LD := $(CROSS_PREFIX)-gcc
+OBJCOPY := $(CROSS_PREFIX)-objcopy
+SIZE := $(CROSS_PREFIX)-size
 
-PQRISCV_DIR ?= ../pqriscv
+################
+# RISC-V Flags #
+################
 
-VEXRISCV_PLATFORM ?= pqvexriscvsim
+RISCV_ARCH ?= rv32im
+RISCV_ABI ?= ilp32
+RISCV_CMODEL ?= medany
 
-objs = $(notdir $(patsubst %.c,%.c.o,$(patsubst %.S,%.S.o,$(1))))
+RISCV_ARCHFLAGS := \
+	-march=$(RISCV_ARCH) \
+	-mabi=$(RISCV_ABI) \
+	-mcmodel=$(RISCV_CMODEL)
 
-ifdef DEBUG
-CFLAGS  += -Og -g3
+################
+# Optimization #
+################
+
+DEBUG ?=
+OPT_SIZE ?=
+LTO ?=
+
+ifeq ($(DEBUG),1)
+CFLAGS += -Og -g3
+else ifeq ($(OPT_SIZE),1)
+CFLAGS += -Os -g3
 else
-CFLAGS  += -O3 -g3
+CFLAGS += -O3 -g3
 endif
-CFLAGS  += \
-				-Wall -Wextra -Wimplicit-function-declaration \
-				-Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes \
-				-Wundef -Wshadow \
-				-fno-common -MD $(DEFINES) \
-				-DPQRISCV_PLATFORM=$(PLATFORM) \
-				-I${PQRISCV_DIR}/mupq/common \
-				-DPROFILE_HASHING \
-				-ffunction-sections \
-				-fdata-sections \
-				--specs=nano.specs \
-				$(PLATFORM_CFLAGS) \
-				$(EXTRAFLAGS)
+
+ifeq ($(LTO),1)
+CFLAGS += -flto
+LDFLAGS += -flto
+endif
+
+################
+# Common Flags #
+################
+
+CFLAGS += \
+	$(RISCV_ARCHFLAGS) \
+	-Wall -Wextra -Wshadow \
+	-MMD \
+	-fno-common \
+	-ffunction-sections \
+	-fdata-sections \
+	-DPROFILE_HASHING \
+	-fstrict-volatile-bitfields \
+	--specs=nano.specs
+
 LDFLAGS += \
-				--specs=nano.specs \
-				-Wl,--gc-sections \
-				$(PLATFORM_LDFLAGS)
+	$(RISCV_ARCHFLAGS) \
+	--specs=nano.specs \
+	--specs=nosys.specs \
+	-nostartfiles \
+	-ffreestanding \
+	-Wl,--gc-sections
 
-include $(PQRISCV_DIR)/common/vexriscv.mk
+################
+# Common rules #
+################
 
-LIBHAL_SRC = \
-	$(PQRISCV_DIR)/common/hal-vexriscv.c \
-	$(PQRISCV_DIR)/mupq/common/fips202.c \
-	$(PQRISCV_DIR)/mupq/common/keccakf1600.c \
-	nonrandombytes.c
-
-LIBHAL_OBJ = $(call objs,$(LIBHAL_SRC))
-
-vpath %.c ./src
-vpath %.S ./src
-vpath %.c $(PQRISCV_DIR)/common
-vpath %.S $(PQRISCV_DIR)/common
-vpath %.c $(PQRISCV_DIR)/mupq/common
+%.elf: $(LINKDEP)
+	@echo "  LD       $@"
+	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
+	$(Q)$(LD) -o $@ $(filter %.o %.a -l%,$^) $(LDFLAGS)
 
 %.a:
-	@echo -e "  AR\t\t  $@"
-	@$(AR) rcs $@ $(filter %.o,$^)
-
-libhal.a: $(LIBHAL_OBJ)
-
-%.elf: libhal.a $(PLATFORM_LINKDEP)
-	@echo -e "  LD\t\t  $@"
-	@$(LD) -o $@ $(LDFLAGS) $(filter %.o,$^) $(filter %.a,$^)
+	@echo "  AR       $@"
+	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
+	$(Q)$(AR) rcs $@ $(filter %.o,$^)
 
 %.bin: %.elf
-	@echo -e "  OBJCOPY\t  $@"
-	@$(OBJCOPY) -Obinary $^ $@
+	@echo "  OBJCOPY  $@"
+	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
+	$(Q)$(OBJCOPY) -Obinary $^ $@
 
 %.c.o: %.c
-	@echo -e "  CC\t\t  $@"
-	@$(CC) -c -o $@ $(CFLAGS) $<
+	@echo "  CC       $@"
+	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
+	$(Q)$(CC) -c -o $@ $(CFLAGS) $<
 
 %.S.o: %.S
-	@echo -e "  CC\t\t  $@"
-	@$(CC) -c -o $@ $(CFLAGS) $<
+	@echo "  AS       $@"
+	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
+	$(Q)$(CC) -c -o $@ $(CFLAGS) $<
 
-clean:
-	rm -f *.o *.d *.elf *.bin *.a .vexriscvplatform.mk
+include hal/hal.mk
 
 .SECONDARY:
 
--include .vexriscvplatform.mk
-
-.vexriscvplatform.mk:
-	@echo "LAST_VEXRISCV_PLATFORM := $(VEXRISCV_PLATFORM)" > .vexriscvplatform.mk
-
-ifdef LAST_VEXRISCV_PLATFORM
-ifneq ($(VEXRISCV_PLATFORM),$(LAST_VEXRISCV_PLATFORM))
-$(error "You changed your VEXRISCV_PLATFORM, you must run make clean!")
-endif
 endif
