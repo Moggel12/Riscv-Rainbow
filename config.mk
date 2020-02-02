@@ -19,6 +19,11 @@ LD := $(CROSS_PREFIX)-gcc
 OBJCOPY := $(CROSS_PREFIX)-objcopy
 SIZE := $(CROSS_PREFIX)-size
 
+SYSROOT ?= $(shell $(CC) --print-sysroot)
+
+CFLAGS += \
+	--sysroot=$(SYSROOT)
+
 ################
 # RISC-V Flags #
 ################
