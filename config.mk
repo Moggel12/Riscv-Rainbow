@@ -15,7 +15,7 @@ Q ?= @
 CROSS_PREFIX ?= riscv64-unknown-elf
 CC := $(CROSS_PREFIX)-gcc
 AR := $(CROSS_PREFIX)-ar
-LD := $(CROSS_PREFIX)-gcc
+LD := $(CC)
 OBJCOPY := $(CROSS_PREFIX)-objcopy
 SIZE := $(CROSS_PREFIX)-size
 
