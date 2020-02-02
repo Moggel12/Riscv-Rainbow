@@ -70,7 +70,6 @@ CFLAGS += \
 	-ffunction-sections \
 	-fdata-sections \
 	-DPROFILE_HASHING \
-	-fstrict-volatile-bitfields \
 	--specs=nano.specs
 
 LDFLAGS += \
