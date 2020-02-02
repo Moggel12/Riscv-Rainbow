@@ -84,10 +84,17 @@ LDFLAGS += \
 # Common rules #
 ################
 
-%.elf: $(LINKDEP)
+HALNAME = $*
+
+_halname_%.o:
+	@echo "  GEN      $@"
+	$(Q)echo "const char hal_name[] = \"$(HALNAME)\";" | \
+		$(CC) -x c -c -o $@ $(filter-out -g3,$(CFLAGS)) -
+
+%.elf: $(LINKDEP) _halname_%.elf.o
 	@echo "  LD       $@"
 	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
-	$(Q)$(LD) -o $@ $(filter %.o %.a -l%,$^) $(LDFLAGS)
+	$(Q)$(LD) -o $@ $(filter %.o %.a -l%,$(filter-out _halname_%.elf.o,$^)) _halname_$@.o $(LDFLAGS)
 
 %.a:
 	@echo "  AR       $@"
