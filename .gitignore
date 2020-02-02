@@ -4,3 +4,5 @@
 *.bin
 *.elf
 compile_commands.json
+.ccls-cache
+build/
