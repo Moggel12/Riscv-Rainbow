@@ -19,6 +19,10 @@ LD := $(CC)
 OBJCOPY := $(CROSS_PREFIX)-objcopy
 SIZE := $(CROSS_PREFIX)-size
 
+HOST_CC := cc
+HOST_AR := ar
+HOST_LD := $(HOST_CC)
+
 SYSROOT ?= $(shell $(CC) --print-sysroot)
 
 CFLAGS += \
@@ -80,6 +84,10 @@ LDFLAGS += \
 	-ffreestanding \
 	-Wl,--gc-sections
 
+HOST_CFLAGS += \
+	-Wall -Wextra -Wshadow \
+	-MMD
+
 ################
 # Common rules #
 ################
@@ -115,6 +123,21 @@ _halname_%.o:
 	@echo "  AS       $@"
 	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
 	$(Q)$(CC) -c -o $@ $(CFLAGS) $<
+
+##############
+# Host Rules #
+##############
+
+host-%.c.o: %.c
+	@echo "  HOST_CC  $@"
+	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
+	$(Q)$(HOST_CC) -c -o $@ $(HOST_CFLAGS) $<
+
+define host_link =
+	@echo "  HOST_LD  $@"
+	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
+	$(Q)$(HOST_LD) -o $@ $(filter host-%.o -l%,$^) $(HOST_LDFLAGS)
+endef
 
 include hal/hal.mk
 
