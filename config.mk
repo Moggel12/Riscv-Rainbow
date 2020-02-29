@@ -1,6 +1,15 @@
 ifndef _CONFIG
 _CONFIG :=
 
+RETAINED_VARS :=
+
+-include .config.mk
+
+.config.mk:
+	@echo "# These variables are retained and can't be changed without a clean" > $@
+	@$(foreach var,$(RETAINED_VARS),echo "$(var) := $($(var))" >> $@; echo "LAST_$(var) := $($(var))" >> $@;)
+
+
 ###############
 # Some Macros #
 ###############
@@ -48,6 +57,8 @@ RISCV_ARCHFLAGS := \
 DEBUG ?=
 OPT_SIZE ?=
 LTO ?=
+
+RETAINED_VARS += DEBUG OPT_SIZE LTO
 
 ifeq ($(DEBUG),1)
 CFLAGS += -Og -g3
@@ -119,6 +130,16 @@ _halname_%.o:
 	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
 	$(Q)$(CC) -c -o $@ $(CFLAGS) $<
 
+%.c.S: %.c
+	@echo "  CC       $@"
+	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
+	$(Q)$(CC) -S -o $@ $(CFLAGS) $<
+
+%.c.i: %.c
+	@echo "  CC       $@"
+	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
+	$(Q)$(CC) -E -o $@ $(CFLAGS) $<
+
 %.S.o: %.S
 	@echo "  AS       $@"
 	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
@@ -142,5 +163,15 @@ endef
 include hal/hal.mk
 
 .SECONDARY:
+
+define VAR_CHECK =
+ifneq ($$(origin LAST_$(1)),undefined)
+ifneq "$$($(1))" "$$(LAST_$(1))"
+$$(error "You changed the $(1) variable, you must run make clean!")
+endif
+endif
+endef
+
+$(foreach VAR,$(RETAINED_VARS),$(eval $(call VAR_CHECK,$(VAR))))
 
 endif

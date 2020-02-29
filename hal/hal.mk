@@ -57,19 +57,6 @@ LDFLAGS += \
 
 LINKDEP += $(LINKERSCRIPT)
 
-#########################
-# Platform change check #
-#########################
-
--include .platform.mk
-
-.platform.mk:
-	@echo "LAST_PLATFORM := $(PLATFORM)" > .platform.mk
-
-ifdef LAST_PLATFORM
-ifneq ($(PLATFORM),$(LAST_PLATFORM))
-$(error "You changed your PLATFORM, you must run make clean!")
-endif
-endif
+RETAINED_VARS += PLATFORM
 
 endif
