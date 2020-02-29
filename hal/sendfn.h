@@ -19,15 +19,16 @@ void send_stop();
  * \param name Name of the integer.
  * \param c Value to send.
  */
-void send_unsigned(const char *name, unsigned int c);
+void send_unsigned(const char *name, unsigned int c, int base);
 
 /**
  * \brief Send a named unsigned long long value.
  *
  * \param name Name of the integer.
  * \param c Value to send.
+ * \param base Number base to use (2, 8, 10 or 16).
  */
-void send_unsignedll(const char *name, unsigned long long c);
+void send_unsignedll(const char *name, unsigned long long c, int base);
 
 /**
  * \brief Send a named nul terminated string.
