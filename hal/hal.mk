@@ -23,7 +23,7 @@ CFLAGS += -I$(SRCDIR)/hal
 # Platform dependent flags #
 ############################
 
-PLATFORM ?= pqvexriscvup5k
+PLATFORM ?= pqvexriscvsim
 
 ifeq ($(PLATFORM),murax)
 libhal.a: CFLAGS += -DVEXRISCV_VOLATILE

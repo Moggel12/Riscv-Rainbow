@@ -17,10 +17,11 @@ DEMO_SRC = src/demo.c
 DEMO_OBJ = $(call objs,$(DEMO_SRC))
 demo.elf: $(DEMO_OBJ) libhal.a
 
+# Don't forget to add all objects to the OBJ variable
 OBJ += $(DEMO_OBJ)
 
 # Include generated dependencies
--include $(OBJ:.o=.d)
+-include $(filter %.d,$(OBJ:.o=.d))
 
 else
 ###############################
