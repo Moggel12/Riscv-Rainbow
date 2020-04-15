@@ -57,18 +57,24 @@ __attribute__((naked)) uint64_t hal_get_time(void)
 {
 	// clang-format off
 #define LE "\n\t"
-#ifdef HAL_INSTR_COUNT
-  asm volatile (LE"csrr a1, minstreth"
-                LE"csrr a0, minstret"
-                LE"csrr a2, minstreth"
-                LE"bne a1, a2, hal_get_time"
-                LE"ret");
-#else
   asm volatile (LE"csrr a1, mcycleh"
                 LE"csrr a0, mcycle"
                 LE"csrr a2, mcycleh"
                 LE"bne a1, a2, hal_get_time"
                 LE"ret");
-#endif
+#undef LE
+	// clang-format on
+}
+
+__attribute__((naked)) uint64_t hal_get_num_instr(void)
+{
+	// clang-format off
+#define LE "\n\t"
+  asm volatile (LE"csrr a1, minstreth"
+                LE"csrr a0, minstret"
+                LE"csrr a2, minstreth"
+                LE"bne a1, a2, hal_get_time"
+                LE"ret");
+#undef LE
 	// clang-format on
 }
