@@ -3,20 +3,25 @@
 #include <ctype.h>
 
 static int started = 0;
+static int firstval = 1;
+
+#define INDENT "    "
+#define INDENT2 INDENT INDENT
 
 void send_start()
 {
 	if (started) {
 		send_stop();
 	}
-	hal_puts("{\n");
+	hal_puts(INDENT "{\n");
 	started = 1;
+  firstval = 1;
 }
 
 void send_stop()
 {
 	if (started) {
-		hal_puts("}\n");
+		hal_puts("\n" INDENT "},\n");
 		started = 0;
 	}
 }
@@ -29,11 +34,15 @@ void send_stop()
  */
 static void send_value(const char* name, const char* value)
 {
-	hal_puts("\"");
+  if (firstval) {
+    firstval = 0;
+  } else {
+    hal_puts(",\n");
+  }
+	hal_puts(INDENT2 "\"");
 	hal_puts(name);
 	hal_puts("\": ");
 	hal_puts(value);
-	hal_puts(",\n");
 }
 
 void send_unsigned(const char* name, unsigned int c, int base)
@@ -165,7 +174,12 @@ void send_unsignedll(const char* name, unsigned long long c, int base)
 
 void send_string(const char* name, const char* str)
 {
-	hal_putc('"');
+  if (firstval) {
+    firstval = 0;
+  } else {
+    hal_puts(",\n");
+  }
+	hal_puts(INDENT2 "\"");
 	hal_puts(name);
 	hal_puts("\": \"");
 	while (*str != '\0') {
@@ -214,12 +228,17 @@ void send_string(const char* name, const char* str)
 		}
 		str++;
 	}
-	hal_puts("\",\n");
+	hal_puts("\"");
 }
 
 void send_bytes(const char *name, const unsigned char* buf, unsigned len)
 {
-	hal_putc('"');
+  if (firstval) {
+    firstval = 0;
+  } else {
+    hal_puts(",\n");
+  }
+	hal_puts(INDENT2 "\"");
 	hal_puts(name);
 	hal_puts("\": bytes.fromhex(\"");
   for (unsigned i = 0; i < len; ++i) {
@@ -229,5 +248,5 @@ void send_bytes(const char *name, const unsigned char* buf, unsigned len)
     h = c & 0xFu;
     hal_putc((h < 10 ? '0' : 'A' - 10) + h);
   }
-	hal_puts("\"),\n");
+	hal_puts("\"");
 }
