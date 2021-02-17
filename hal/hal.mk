@@ -17,32 +17,35 @@ libhal.a: $(LIBHAL_OBJ)
 
 OBJ += $(LIBHAL_OBJ)
 
-CFLAGS += -I$(SRCDIR)/hal
+LIBDEPS += libhal.a
+LDLIBS += -lhal
+
+CPPFLAGS += -I$(SRCDIR)/hal
 
 ############################
 # Platform dependent flags #
 ############################
 
-PLATFORM ?= pqvexriscvsim
+PLATFORM ?= pqvexriscvup5k
 
 ifeq ($(PLATFORM),murax)
-libhal.a: CFLAGS += -DVEXRISCV_VOLATILE
+libhal.a: CPPFLAGS += -DVEXRISCV_VOLATILE
 endif
 
 ifeq ($(PLATFORM),pqvexriscvup5k)
-libhal.a: CFLAGS += -DVEXRISCV_VOLATILE -DVEXRISCV_RWMTVEC
+libhal.a: CPPFLAGS += -DVEXRISCV_VOLATILE -DVEXRISCV_RWMTVEC
 endif
 
 ifeq ($(PLATFORM),pqvexriscvicoboard)
-libhal.a: CFLAGS += -DVEXRISCV_VOLATILE -DVEXRISCV_RWMTVEC
+libhal.a: CPPFLAGS += -DVEXRISCV_VOLATILE -DVEXRISCV_RWMTVEC
 endif
 
 ifeq ($(PLATFORM),pqvexriscvsim)
-libhal.a: CFLAGS += -DVEXRISCV_RWMTVEC
+libhal.a: CPPFLAGS += -DVEXRISCV_RWMTVEC
 endif
 
 ifeq ($(PLATFORM),pqvexriscvsimhuge)
-libhal.a: CFLAGS += -DVEXRISCV_RWMTVEC
+libhal.a: CPPFLAGS += -DVEXRISCV_RWMTVEC
 endif
 
 #################
@@ -55,7 +58,7 @@ LDFLAGS += \
 	-Wl,-T$(notdir $(LINKERSCRIPT)) \
 	-L$(SRCDIR)/hal
 
-LINKDEP += $(LINKERSCRIPT)
+LINKDEPS += $(LINKERSCRIPT)
 
 RETAINED_VARS += PLATFORM
 

@@ -23,6 +23,17 @@ OBJ += $(DEMO_OBJ)
 # Include generated dependencies
 -include $(filter %.d,$(OBJ:.o=.d))
 
+# Check for changed variables
+define VAR_CHECK =
+ifneq ($$(origin LAST_$(1)),undefined)
+ifneq "$$($(1))" "$$(LAST_$(1))"
+$$(error "You changed the $(1) variable, you must run make clean!")
+endif
+endif
+endef
+
+$(foreach VAR,$(RETAINED_VARS),$(eval $(call VAR_CHECK,$(VAR))))
+
 else
 ###############################
 # Out-of-tree build mechanism #

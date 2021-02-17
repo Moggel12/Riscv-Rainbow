@@ -14,7 +14,9 @@ RETAINED_VARS :=
 # Some Macros #
 ###############
 objs = $(addsuffix .o,$(1))
+hostobjs = $(addprefix host-objs/,$(addsuffix .o,$(1)))
 cursubdir = $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
+srcwildcard = $(patsubst $(SRCDIR)/%,%,$(wildcard $(SRCDIR)/$(1)))
 
 #####################
 # Compiler settings #
@@ -23,7 +25,7 @@ cursubdir = $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 Q ?= @
 CROSS_PREFIX ?= riscv64-unknown-elf
 CC := $(CROSS_PREFIX)-gcc
-AR := $(CROSS_PREFIX)-ar
+AR := $(CROSS_PREFIX)-gcc-ar
 LD := $(CC)
 OBJCOPY := $(CROSS_PREFIX)-objcopy
 SIZE := $(CROSS_PREFIX)-size
@@ -60,34 +62,33 @@ LTO ?=
 
 RETAINED_VARS += DEBUG OPT_SIZE LTO
 
-ifeq ($(DEBUG),1)
-CFLAGS += -Og -g3
-else ifeq ($(OPT_SIZE),1)
-CFLAGS += -Os -g3
-else
-CFLAGS += -O3 -g3
-endif
+OPT_FLAGS = $(if $(DEBUG),-O0,$(if $(OPT_SIZE),-Os,-O3))
 
 ifeq ($(LTO),1)
 CFLAGS += -flto
-LDFLAGS += -flto
+LDFLAGS += -Wl,-flto
 endif
 
 ################
 # Common Flags #
 ################
 
+CPPFLAGS +=
+
 CFLAGS += \
+	$(OPT_FLAGS) \
+	-g3 \
 	$(RISCV_ARCHFLAGS) \
 	-Wall -Wextra -Wshadow \
 	-MMD \
 	-fno-common \
 	-ffunction-sections \
 	-fdata-sections \
-	-DPROFILE_HASHING \
-	--specs=nano.specs
+	--specs=nano.specs \
+	$(CPPFLAGS)
 
 LDFLAGS += \
+	-L. \
 	$(RISCV_ARCHFLAGS) \
 	--specs=nano.specs \
 	--specs=nosys.specs \
@@ -95,9 +96,16 @@ LDFLAGS += \
 	-ffreestanding \
 	-Wl,--gc-sections
 
+HOST_CPPFLAGS +=
+
 HOST_CFLAGS += \
+	-O0 -g3 \
 	-Wall -Wextra -Wshadow \
-	-MMD
+	-MMD \
+	$(HOST_CPPFLAGS)
+
+LIBDEPS +=
+LINKDEPS += $(LIBDEPS)
 
 ################
 # Common rules #
@@ -105,15 +113,21 @@ HOST_CFLAGS += \
 
 HALNAME = $*
 
+define compile =
+	@echo "  CC       $@"
+	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
+	$(Q)$(CC) -c -o $@ $(CFLAGS) $<
+endef
+
 _halname_%.o:
 	@echo "  GEN      $@"
 	$(Q)echo "const char hal_name[] = \"$(HALNAME)\";" | \
-		$(CC) -x c -c -o $@ $(filter-out -g3,$(CFLAGS)) -
+		$(CC) -x c -c -o $@ $(filter-out -g3,$(CFLAGS)) $(CPPFLAGS) -
 
-%.elf: $(LINKDEP) _halname_%.elf.o
+%.elf: _halname_%.elf.o $(LINKDEPS)
 	@echo "  LD       $@"
 	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
-	$(Q)$(LD) -o $@ $(filter %.o %.a -l%,$(filter-out _halname_%.elf.o,$^)) _halname_$@.o $(LDFLAGS)
+	$(Q)$(LD) $(LDFLAGS) -o $@ $(filter %.o,$^) -Wl,--start-group $(LDLIBS) -Wl,--end-group
 
 %.a:
 	@echo "  AR       $@"
@@ -126,19 +140,7 @@ _halname_%.o:
 	$(Q)$(OBJCOPY) -Obinary $^ $@
 
 %.c.o: %.c
-	@echo "  CC       $@"
-	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
-	$(Q)$(CC) -c -o $@ $(CFLAGS) $<
-
-%.c.S: %.c
-	@echo "  CC       $@"
-	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
-	$(Q)$(CC) -S -o $@ $(CFLAGS) $<
-
-%.c.i: %.c
-	@echo "  CC       $@"
-	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
-	$(Q)$(CC) -E -o $@ $(CFLAGS) $<
+	$(compile)
 
 %.S.o: %.S
 	@echo "  AS       $@"
@@ -149,7 +151,7 @@ _halname_%.o:
 # Host Rules #
 ##############
 
-host-%.c.o: %.c
+host-objs/%.c.o: %.c
 	@echo "  HOST_CC  $@"
 	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
 	$(Q)$(HOST_CC) -c -o $@ $(HOST_CFLAGS) $<
@@ -157,21 +159,11 @@ host-%.c.o: %.c
 define host_link =
 	@echo "  HOST_LD  $@"
 	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
-	$(Q)$(HOST_LD) -o $@ $(filter host-%.o -l%,$^) $(HOST_LDFLAGS)
+	$(Q)$(HOST_LD) $(HOST_LDFLAGS) -o $@ $(filter host-%.o,$^) $(HOST_LDLIBS)
 endef
 
 include hal/hal.mk
 
 .SECONDARY:
-
-define VAR_CHECK =
-ifneq ($$(origin LAST_$(1)),undefined)
-ifneq "$$($(1))" "$$(LAST_$(1))"
-$$(error "You changed the $(1) variable, you must run make clean!")
-endif
-endif
-endef
-
-$(foreach VAR,$(RETAINED_VARS),$(eval $(call VAR_CHECK,$(VAR))))
 
 endif
