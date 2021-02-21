@@ -25,6 +25,18 @@ typedef struct {
 	uint32_t clockDivider;
 } Uart_Config;
 
+static uint32_t uart_readAvailability(Uart_Reg* reg)
+{
+	return (reg->STATUS >> 24) & 0xFF;
+}
+
+static int uart_read(Uart_Reg* reg)
+{
+	while (uart_readAvailability(reg) == 0)
+		;
+	return reg->DATA & (0xFFu);
+}
+
 static uint32_t uart_writeAvailability(Uart_Reg* reg)
 {
 	return (reg->STATUS >> 16) & 0xFF;
@@ -38,6 +50,11 @@ static void uart_write(Uart_Reg* reg, uint32_t data)
 }
 
 #define UART ((Uart_Reg*) (0xF0010000))
+
+int hal_getc(void)
+{
+  return uart_read(UART);
+}
 
 void hal_putc(int c)
 {

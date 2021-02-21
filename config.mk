@@ -107,6 +107,8 @@ HOST_CFLAGS += \
 LIBDEPS +=
 LINKDEPS += $(LIBDEPS)
 
+include hal/hal.mk
+
 ################
 # Common rules #
 ################
@@ -161,8 +163,6 @@ define host_link =
 	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
 	$(Q)$(HOST_LD) $(HOST_LDFLAGS) -o $@ $(filter host-%.o,$^) $(HOST_LDLIBS)
 endef
-
-include hal/hal.mk
 
 .SECONDARY:
 

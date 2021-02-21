@@ -17,6 +17,15 @@ enum clock_mode {
 void hal_setup(const enum clock_mode clock);
 
 /**
+ * \brief Get character from the host.
+ *
+ * Blocks until a character is available.
+ *
+ * \return The character (8-bit).
+ */
+int hal_getc();
+
+/**
  * \brief Send a character to the host.
  *
  * \param str String to send.
