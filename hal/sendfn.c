@@ -248,5 +248,5 @@ void send_bytes(const char *name, const unsigned char* buf, unsigned len)
     h = c & 0xFu;
     hal_putc((h < 10 ? '0' : 'A' - 10) + h);
   }
-	hal_puts("\"");
+	hal_puts("\")");
 }
