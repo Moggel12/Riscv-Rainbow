@@ -30,5 +30,5 @@ A Risc-V implementation of the Rainbow MPKC, made for the BADM500 course at Univ
 - Czypek2012, "Efficient Implementations of MQPKS on Constrained Devices"
 - Petzoldt2011, "Small Public Keys and Fast Verification for Multivariate Quadratic Public Key Systems"
 - Ding2020, chapter 5
-- []https://www.pqcrainbow.org/
-- []https://csrc.nist.gov/CSRC/media/Presentations/rainbow-round-2-presentation/images-media/rainbow-ding.pdf
+- (https://www.pqcrainbow.org/)
+- (https://csrc.nist.gov/CSRC/media/Presentations/rainbow-round-2-presentation/images-media/rainbow-ding.pdf)
