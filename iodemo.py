@@ -9,32 +9,40 @@ def parse_arguments():
     parser.add_argument("-b", "--baud", help="BAUD Rate", default=115200, type=int)
     return parser.parse_args()
 
-
-def fn(s, i):
-    i %= 256
-    return (s * 0x42 + i) % 0x66
-
-
 def main():
     args = parse_arguments()
     with serial.Serial(args.uart, args.baud) as ser:
         ser.flushInput()
-        s = 0x42
-        for i in range(256):
-            print(f"Sending 0x{i:02X}...", end="", flush=True)
-            try:
-                ser.write([i])
-                s = fn(s, i)
-                c = ser.read(1)
-                if len(c) != 1:
-                    print("read failed!")
-                    break
-                c = c[0]
-                print(f"got 0x{c:02X} (should be 0x{s:02X})")
-            except TimeoutError:
-                print("timed out!")
-                break
-
+        # for i in range(256):
+            # print(f"Sending {i}...", end="", flush=True)
+            # try:
+                # ser.write([i])
+                # c = ser.read(1)
+                # if len(c) != 1:
+                    # print("read failed!")
+                    # break
+                # c = c[0]
+                # print(f"got {c} (should be {i})")
+            # except TimeoutError:
+                # print("timed out!")
+                # break
+        msg_sent = "hello"
+        for c in msg_sent:
+            print(f"Sending {c} (ASCII {ord(c)}). ", end="", flush=True)
+            ser.write([ord(c)])
+            c_rcv = ser.read(1)[0]
+            print(f"Got {c_rcv}, should be {ord(c)}", flush=True)
+        print(f"Sent {msg_sent}")
+        ser.write([0])
+        c = ser.read(1)[0]
+        msg_rcv = ""
+        while (c != 0):
+            print("in loop")
+            char = chr(c) 
+            print(f"Got character {char}", flush=True)
+            msg_rcv += c
+            c = ser.read(1)[0]
+        print(f"Total message received: {msg_rcv}", flush=True)
 
 if __name__ == "__main__":
     main()

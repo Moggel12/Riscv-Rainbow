@@ -1,6 +1,16 @@
 ifndef _CONFIG
 _CONFIG :=
 
+### CUSTOM ENTRIES ###
+CFLAGS = -O3 -std=c11 -Wall -Wextra -fno-omit-frame-pointer
+INCPATH = -I$(PROJ_DIR)
+
+ifdef DEBUG
+	CFLAGS=  -D_DEBUG_ -g -O1 -mavx2 -std=c99 -Wall -Wextra -fsanitize=addres    s -fno-omit-frame-pointer
+endif
+### CUSTOM ENTRIES END ###
+
+
 RETAINED_VARS :=
 
 -include .config.mk
@@ -148,6 +158,14 @@ _halname_%.o:
 	@echo "  AS       $@"
 	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
 	$(Q)$(CC) -c -o $@ $(CFLAGS) $<
+
+### CUSTOM ENTRIES ###
+%.o: %.c
+	$(CC) $(CFLAGS) $(INCPATH) -c $<
+
+%.o: $(PROJ_DIR)/%.c
+	$(CC) $(CFLAGS) $(INCPATH) -c $<
+### CUSTOM ENTRIES END ###
 
 ##############
 # Host Rules #
