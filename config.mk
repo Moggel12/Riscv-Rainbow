@@ -1,13 +1,22 @@
 ifndef _CONFIG
 _CONFIG :=
 
-### CUSTOM ENTRIES ###
-CFLAGS = -O3 -std=c11 -Wall -Wextra -fno-omit-frame-pointer
-INCPATH = -I$(PROJ_DIR)
 
-ifdef DEBUG
-	CFLAGS=  -D_DEBUG_ -g -O1 -mavx2 -std=c99 -Wall -Wextra -fsanitize=addres    s -fno-omit-frame-pointer
-endif
+### CUSTOM ENTRIES ###
+#ifndef PROJ_DIR
+#PROJ_DIR = src/Ia_Classic_Reference
+#PROJ_DIR = src/demo
+#PROJ_DIR = src/Ia_Classic_Optimize
+#endif
+
+#CFLAGS = -O3 -Wall -Wextra -fno-omit-frame-pointer
+
+#ifdef DEBUG
+#	CFLAGS =  -D_DEBUG_ -g -O1 -mavx2  -Wall -Wextra -fsanitize=addres    s -fno-omit-frame-pointer
+#endif
+
+#CFLAGS += -Isrc/$(PROJ_DIR)
+
 ### CUSTOM ENTRIES END ###
 
 
@@ -159,13 +168,13 @@ _halname_%.o:
 	$(Q)[ -d $(@D) ] || mkdir -p $(@D)
 	$(Q)$(CC) -c -o $@ $(CFLAGS) $<
 
-### CUSTOM ENTRIES ###
-%.o: %.c
-	$(CC) $(CFLAGS) $(INCPATH) -c $<
+#### CUSTOM ENTRIES ###
+#%.o: %.c
+	#$(CC) $(CFLAGS) $(INCPATH) -c $<
 
-%.o: $(PROJ_DIR)/%.c
-	$(CC) $(CFLAGS) $(INCPATH) -c $<
-### CUSTOM ENTRIES END ###
+#%.o: $(PROJ_DIR)/%.c
+	#$(CC) $(CFLAGS) $(INCPATH) -c $<
+#### CUSTOM ENTRIES END ###
 
 ##############
 # Host Rules #

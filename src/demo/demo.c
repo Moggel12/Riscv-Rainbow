@@ -1,6 +1,6 @@
 #include <hal.h>
 #include <sendfn.h>
-
+#include "test.h"
 int main(void)
 {
     hal_setup(CLOCK_FAST);
