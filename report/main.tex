@@ -1,0 +1,201 @@
+% Information and metadata
+% --------------------------
+
+	% When changed, these should automatically appear in the document.
+	\title{Post Quantum Cryptography on the RISC-V platform - Rainbow}% \ctitle - Document title for maketitle command
+	\date{01-06-2021}								% \cdate - hand-in date
+	\newcommand{\ccourse}{BADM500}							% \ccouse - course code (and name)
+
+% Preamble
+% --------------------------
+	% BEGIN_FOLD
+
+	% Document Setup
+	% ------------------------
+	\documentclass[11pt,a4paper]{article}       		% Optional = twoside for two-sided documents
+
+	% Packages
+	% ------------------------
+		% BEGIN_FOLD
+
+			% Essential Packages
+			\usepackage[english]{babel}					% Language pack
+			\usepackage[utf8]{inputenc}					% Input encoding for UTF8
+
+			% Mathematics Packages
+			\usepackage{amsmath}						% Basic math tools
+			\usepackage{amssymb}						% Basic math symbols
+
+			% Programming Packages
+			\usepackage{listings}						% Listings provide code environments
+			\usepackage{courier}						% Font package for code
+
+			% Layout Packages
+			\usepackage{lastpage}
+			\usepackage{graphicx}						% Importing .svg, .pdf and other
+			\usepackage{caption}						% Custom figure captions
+			\usepackage{fancyhdr}						% Package for fancy headers and footers
+			\usepackage{float}							% Float options for placing images, tables, etc.
+			\usepackage{courier}						% Courier font for code
+			\usepackage{subcaption}						% Separate captions for subimages
+			\usepackage{color}                          % Gives colour commands (Used for links)
+			\usepackage[pdftex, colorlinks]{hyperref}   % Makes hyperlinks work and coloured
+			\usepackage[paperwidth=8.5in]{geometry}     % Enlarges the width of the page by inches
+
+			% Drawing and diagram packages
+			\usepackage{tikz}							% Package for drawing diagrams
+
+			% Misc. Packages
+            \usepackage{nameref}                        % Package for referencing names
+            \usepackage{leading}                        % Package for giving the lines spacing
+            \usepackage{comment}                        % Allows to comment entire paragraph
+            \usepackage{tabularx}
+            
+
+		% END_FOLD
+
+	% Shortcuts and commands
+	% ------------------------
+		% BEGIN_FOLD
+			\newcommand{\en}[1]{\,\text{#1}}								% \en{} {Enhed} Format units correctly using this command.
+			\newcommand{\un}[1]{\,\text{#1}}								% \un{} {Unit}  Same as above
+			\newcommand{\dd}{\text{d}}										% \dd 			Properly formatted differential 'd'-symbol.
+
+			\newcommand{\paa}[1]{\left( #1 \right)}							% \paa{} {Parenthesis} Shorthand for scaling parentheses.
+			\newcommand{\paas}[1]{\left[ #1 \right]}						% \paas{} {Square brackets} Shorthand for square brackets
+			\newcommand{\paac}[1]{\left\lbrace #1 \right\rbrace}			% \paac{} {Braces} Shorthand for braces (curly brackets)
+			\newcommand{\mean}[1]{\left\langle #1 \right\rangle}			% \mean{} {mean value} Shorthand for mean value (Angles)
+			\newcommand{\floor}[1]{\lfloor #1 \rfloor}						% \floor{}
+			\newcommand{\ceil}[1]{\lceil #1 \rceil}							% \ceil{}
+
+			\newcommand{\code}[1]{\lstinline|#1|}							% \code{} Insert code here to have in-line code.
+			
+			\newcommand{\br}{\newline\newline}                              % Adds an empty line
+
+
+		% END_FOLD
+
+	% Settings / Preferences
+	% ------------------------
+		% BEGIN_FOLD
+
+			% Equation, align, and gather environments can have page breaks
+			\allowdisplaybreaks
+
+			% Coloured links (Optional, delete for non-coloured links)
+			\hypersetup{colorlinks,
+				citecolor = black,
+				filecolor = black,
+				linkcolor = black,
+				urlcolor = blue
+				}
+
+			% Colours for code environment
+			\definecolor{codegreen}{rgb}{0,0.6,0}
+			\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+			\definecolor{codepurple}{rgb}{0.58,0,0.82}
+			\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+			% Configure code environment
+			\lstset{
+				numbers			= left,
+				stepnumber 		= 5,					% Numbers every 5 lines of code
+				firstnumber 	= 1,
+				numberfirstline = true,
+				showtabs 		= false,
+				basicstyle		= \ttfamily,
+				breaklines		= true,
+				columns			= fixed,
+				showspaces		= false,
+				commentstyle	= \color{codegreen},
+				keywordstyle	= \color{magenta},
+				numberstyle		= \color{codegray},
+				stringstyle		= \color{codepurple},
+				showstringspaces= false
+				}
+
+			% Nicer dots for itemisation
+			\renewcommand{\labelitemi}{·}				% Nicer dots for 'itemize' environments
+
+            
+		% END_FOLD
+
+	% END_FOLD
+
+% Layout (Header and footer can be edited here)
+% --------------------------
+	% BEGIN_FOLD
+
+		% Margins
+		\addtolength\textheight{2cm}
+		\addtolength\topmargin{-1cm}
+		\addtolength\marginparwidth{1.5cm}
+		\addtolength\headheight{1.6pt}
+
+		% Indent and paragraphs
+		\setlength\parindent{0pt} 								% Comment to indent first line in  paragraph
+		
+		% Line spacing
+		\leading{17pt}
+
+		% Header, footer
+		\pagestyle{fancy}										% Template for header and footer
+		\fancyhf{}												% Set header and footer to empty
+
+		% Left header (inner if using twopage layout)
+		\fancyhf[HLO,HRE]{University of Southern Denmark}
+
+		% Center header
+		\fancyhf[HC]{\ccourse}
+
+		% Right header (outer)
+		\fancyhf[HRO,HLE]{01/06 2021}
+
+		% Left footer (inner)
+		\fancyhf[FLO,FRE]{}
+
+		% Center footer
+		\fancyhf[FC]{Page \thepage \, of \pageref{LastPage}}
+
+		% Right footer (outer)
+		\fancyhf[FRO,FLE]{}
+
+	% END_FOLD
+	
+% ==========================
+% Document
+% ==========================
+\begin{document}
+
+	\maketitle 													% Prints title, author and date
+	\begin{minipage}[t]{0.6\textwidth}
+        \begin{flushleft} \large
+            \emph{Author:}\\
+            \text{Mikkel Juul Vestergaard}
+        \end{flushleft}
+    \end{minipage}
+    \begin{minipage}[t]{0.4\textwidth}
+        \begin{flushright} \large
+            \emph{Supervisor:} \\
+            \text{Assist. professor,}\\
+            \text{Ruben Niederhagen}
+        \end{flushright}
+    \end{minipage}\\[3cm]
+    
+	%\thispagestyle{empty} 									% No header or footer on first page
+   	\thispagestyle{fancy}										% First page with header and footer
+    \newpage
+    
+    \tableofcontents %Indholdsfortegnelse
+
+    \newpage
+    
+    % Include new tex files here.
+    % --------------------------
+        \include{Introduction}
+        \include{Pre-implementation}
+        \include{Implementation}
+        \include{Optimizations}
+        \include{Conclusion}
+\end{document}
+
