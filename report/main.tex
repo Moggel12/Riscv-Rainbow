@@ -3,6 +3,7 @@
 
 	% When changed, these should automatically appear in the document.
 	\title{Post Quantum Cryptography on the RISC-V platform - Rainbow}% \ctitle - Document title for maketitle command
+	\author{}
 	\date{01-06-2021}								% \cdate - hand-in date
 	\newcommand{\ccourse}{BADM500}							% \ccouse - course code (and name)
 
@@ -139,26 +140,26 @@
 		\leading{17pt}
 
 		% Header, footer
-		\pagestyle{fancy}										% Template for header and footer
-		\fancyhf{}												% Set header and footer to empty
+		%\pagestyle{fancy}										% Template for header and footer
+		%\fancyhf{}												% Set header and footer to empty
 
 		% Left header (inner if using twopage layout)
-		\fancyhf[HLO,HRE]{University of Southern Denmark}
+		\fancyhf[HLO]{University of Southern Denmark}
 
 		% Center header
 		\fancyhf[HC]{\ccourse}
 
 		% Right header (outer)
-		\fancyhf[HRO,HLE]{01/06 2021}
+		\fancyhf[HRO]{01-06-2021}
 
 		% Left footer (inner)
-		\fancyhf[FLO,FRE]{}
+		%\fancyhf[FLO,FRE]{}
 
 		% Center footer
 		\fancyhf[FC]{Page \thepage \, of \pageref{LastPage}}
 
 		% Right footer (outer)
-		\fancyhf[FRO,FLE]{}
+		%\fancyhf[FRO,FLE]{}
 
 	% END_FOLD
 	
@@ -192,10 +193,12 @@
     
     % Include new tex files here.
     % --------------------------
+        \include{Abstract}
         \include{Introduction}
-        \include{Pre-implementation}
+        \include{Preliminaries}
         \include{Implementation}
         \include{Optimizations}
+        \include{Evaluation}
         \include{Conclusion}
 \end{document}
 

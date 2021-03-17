@@ -2,6 +2,12 @@ ifdef SRCDIR
 
 VPATH = $(SRCDIR)
 
+SRCS = $(SRCDIR)/src
+
+LIBCRYPTO = $(SRCS)/libcrypto
+LIBCRYPTO_INC = $(LIBCRYPTO)/include/riscvcrypto
+LIBCRYPTO_A = $(LIBCRYPTO)/lib
+
 # Add your targets here (or later with TARGET += ...)
 TARGETS =
 
@@ -15,13 +21,14 @@ PROJ_DIR = Ia_Classic_Reference
 #PROJ_DIR = demo
 endif 
 
-CFLAGS += -I$(SRCDIR)/src/$(PROJ_DIR) -I$(SRCDIR)/src/openssl
-
+CFLAGS += -I$(SRCS)/$(PROJ_DIR) -I$(LIBCRYPTO_INC)
+LDLIBS += -L$(SRCS)/libcrypto/lib -laes_reference -lsha256_reference
+$(info $$LDFLAGS is [${LDFLAGS}])
 # For each target define a TARGETNAME_SRC, TARGETNAME_OBJ and define any
 # additional dependencies for your the target TARGETNAME.elf file (just
 # define the dependencies, a generic rule for .elf target exists in
 # config.mk).
-#DEMO_SRC = src/demo.c $(wildcard $(SRCDIR)/src/$(PROJ_DIR)/*.c)
+#DEMO_SRC = src/demo/demo.c $(wildcard $(SRCDIR)/src/demo/$(PROJ_DIR)/*.c)
 #DEMO_OBJ = $(call objs,$(DEMO_SRC))
 #demo.elf: $(DEMO_OBJ)
 #TARGETS += demo.bin
@@ -36,7 +43,7 @@ CFLAGS += -I$(SRCDIR)/src/$(PROJ_DIR) -I$(SRCDIR)/src/openssl
 #customdemo.elf: $(CUSTOMDEMO_OBJ)
 #TARGETS += customdemo.bin
 
-GENKEY_SRC = src/rainbow-genkey.c $(wildcard $(SRCDIR)/src/$(PROJ_DIR)/*.c)
+GENKEY_SRC = src/rainbow-genkey.c $(wildcard $(SRCDIR)/src/$(PROJ_DIR)/*.c) 
 GENKEY_OBJ = $(call objs,$(GENKEY_SRC))
 rainbow-genkey.elf: $(GENKEY_OBJ)
 TARGETS += rainbow-genkey.bin
@@ -55,8 +62,7 @@ TARGETS += rainbow-genkey.bin
 # Don't forget to add all objects to the OBJ variable
 #OBJ += $(DEMO_OBJ)
 
-OBJ += $(DEMO_OBJ) $(GENKEY_OBJ) $(SIGNKEY_OBJ) $(VERIFY_OBJ)
-
+OBJ += $(DEMO_OBJ) $(GENKEY_OBJ) $(SIGNKEY_OBJ) $(VERIFY_OBJ) 
 targets: $(TARGETS)
 
 # Include generated dependencies

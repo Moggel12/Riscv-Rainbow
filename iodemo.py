@@ -26,23 +26,6 @@ def main():
             # except TimeoutError:
                 # print("timed out!")
                 # break
-        msg_sent = "hello"
-        for c in msg_sent:
-            print(f"Sending {c} (ASCII {ord(c)}). ", end="", flush=True)
-            ser.write([ord(c)])
-            c_rcv = ser.read(1)[0]
-            print(f"Got {c_rcv}, should be {ord(c)}", flush=True)
-        print(f"Sent {msg_sent}")
-        ser.write([0])
-        c = ser.read(1)[0]
-        msg_rcv = ""
-        while (c != 0):
-            print("in loop")
-            char = chr(c) 
-            print(f"Got character {char}", flush=True)
-            msg_rcv += c
-            c = ser.read(1)[0]
-        print(f"Total message received: {msg_rcv}", flush=True)
 
 if __name__ == "__main__":
     main()

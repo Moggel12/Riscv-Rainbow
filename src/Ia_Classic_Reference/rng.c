@@ -8,9 +8,8 @@
 
 #include <string.h>
 #include "rng.h"
-#include <openssl/conf.h>
-#include <openssl/evp.h>
-#include <openssl/err.h>
+#include "aes/api_aes.h"
+#include "aes/ttable/common.h"
 
 AES256_CTR_DRBG_struct  DRBG_ctx;
 
@@ -116,24 +115,37 @@ void handleErrors(void)
 void
 AES256_ECB(unsigned char *key, unsigned char *ctr, unsigned char *buffer)
 {
-    EVP_CIPHER_CTX *ctx;
+    /*EVP_CIPHER_CTX *ctx;*/
     
-    int len;
+    /*int len;*/
     
 //    int ciphertext_len;  /// setted but not use
     
     /* Create and initialise the context */
-    if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+    /*if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();*/
     
-    if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_ecb(), NULL, key, NULL))
-        handleErrors();
+    /*if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_ecb(), NULL, key, NULL))*/
+        /*handleErrors();*/
     
-    if(1 != EVP_EncryptUpdate(ctx, buffer, &len, ctr, 16))
-        handleErrors();
+    /*if(1 != EVP_EncryptUpdate(ctx, buffer, &len, ctr, 16))*/
+        /*handleErrors();*/
 //    ciphertext_len = len;   /// setted but not use
     
     /* Clean up */
-    EVP_CIPHER_CTX_free(ctx);
+    /*EVP_CIPHER_CTX_free(ctx);*/
+
+    // Modifications:
+    uint32_t rk[AES_256_RK_WORDS];
+    
+    for (int i = 0; i < AES_256_RK_WORDS; i++) {
+        rk[i] = 0;
+    }
+
+    // First expand the key provided
+    aes_256_enc_key_schedule(rk, (uint8_t *) key);
+
+    // The expanded key schedule can now be handed over to the AES encryption algorithm
+    aes_256_ecb_encrypt((uint8_t *) buffer, (uint8_t *) ctr, rk);
 }
 
 void
