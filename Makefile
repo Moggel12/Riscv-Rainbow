@@ -22,7 +22,7 @@ PROJ_DIR = Ia_Classic_Reference
 endif 
 
 CFLAGS += -I$(SRCS)/$(PROJ_DIR) -I$(LIBCRYPTO_INC)
-LDLIBS += -L$(SRCS)/libcrypto/lib -laes_reference -lsha256_reference
+LDLIBS += -L$(LIBCRYPTO_A) -laes_reference -lsha256_reference
 $(info $$LDFLAGS is [${LDFLAGS}])
 # For each target define a TARGETNAME_SRC, TARGETNAME_OBJ and define any
 # additional dependencies for your the target TARGETNAME.elf file (just
