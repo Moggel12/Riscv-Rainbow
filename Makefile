@@ -23,7 +23,9 @@ endif
 
 CFLAGS += -I$(SRCS)/$(PROJ_DIR) -I$(LIBCRYPTO_INC)
 LDLIBS += -L$(LIBCRYPTO_A) -laes_reference -lsha256_reference
-$(info $$LDFLAGS is [${LDFLAGS}])
+
+CFLS = $(wildcard $(SRCDIR)/src/$(PROJ_DIR)/*.c) 
+
 # For each target define a TARGETNAME_SRC, TARGETNAME_OBJ and define any
 # additional dependencies for your the target TARGETNAME.elf file (just
 # define the dependencies, a generic rule for .elf target exists in
@@ -43,26 +45,25 @@ $(info $$LDFLAGS is [${LDFLAGS}])
 #customdemo.elf: $(CUSTOMDEMO_OBJ)
 #TARGETS += customdemo.bin
 
-GENKEY_SRC = src/rainbow-genkey.c $(wildcard $(SRCDIR)/src/$(PROJ_DIR)/*.c) 
-GENKEY_OBJ = $(call objs,$(GENKEY_SRC))
-rainbow-genkey.elf: $(GENKEY_OBJ)
-TARGETS += rainbow-genkey.bin
+#GENKEY_SRC = src/rainbow-genkey.c $(CFLS)
+#GENKEY_OBJ = $(call objs,$(GENKEY_SRC))
+#rainbow-genkey.elf: $(GENKEY_OBJ)
+#TARGETS += rainbow-genkey.bin
 
-#SIGNKEY_SRC = src/rainbow-sign.c
-#SIGNKEY_OBJ = $(call objs,$(SIGNKEY_SRC))
-#TARGETS += rainbow-signkey.bin
+KEYSIGN_SRC = src/rainbow-sign.c $(CFLS)
+KEYSIGN_OBJ = $(call objs,$(KEYSIGN_SRC))
+rainbow-sign.elf: $(KEYSIGN_OBJ)
+TARGETS += rainbow-sign.bin
 
-#VERIFY_SRC = src/rainbow-verify.c 
+#VERIFY_SRC = src/rainbow-verify.c $(CFLS)
 #VERIFY_OBJ = $(call objs,$(VERIFY_SRC))
+#rainbow-verify.elf: $(VERIFY_OBJ)
 #TARGETS += rainbox-verify.bin
-
-#SRCS = $(wildcard $(PROJ_DIR)/*.c)
-#SRCS = src/test.c
 
 # Don't forget to add all objects to the OBJ variable
 #OBJ += $(DEMO_OBJ)
 
-OBJ += $(DEMO_OBJ) $(GENKEY_OBJ) $(SIGNKEY_OBJ) $(VERIFY_OBJ) 
+OBJ += $(DEMO_OBJ) $(GENKEY_OBJ) $(KEYSIGN_OBJ) $(VERIFY_OBJ) 
 targets: $(TARGETS)
 
 # Include generated dependencies
@@ -98,6 +99,5 @@ Makefile : ;
 
 .PHONY: clean
 clean:
-	rm -rf $(OBJDIR)
-
+	rm -rf $(OBJDIR) 
 endif

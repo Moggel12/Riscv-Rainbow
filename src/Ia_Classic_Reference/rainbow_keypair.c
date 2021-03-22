@@ -12,16 +12,16 @@
 #include <stdint.h>
 #include <string.h>
 
-
+#include <sendfn.h>
 /////////////////////////////////////////////////////////////////
 
 
 #include "utils_prng.h"
 #include "utils_malloc.h"
 
-#if 64 < _V1
-#define _MALLOC_
-#endif
+/*#if 64 < _V1*/
+/*#define _MALLOC_*/
+/*#endif*/
 
 
 static
@@ -122,13 +122,9 @@ int cpk_to_pk( pk_t * rpk, const cpk_t * cpk )
     // procedure:  cpk_t --> extcpk_t  --> pk_t
 
     // convert from cpk_t to extcpk_t
-#if defined(_MALLOC_)
-    ext_cpk_t * pk = (ext_cpk_t*)malloc(sizeof(ext_cpk_t));
-    if(NULL == pk) return -1;
-#else
     ext_cpk_t _pk;
     ext_cpk_t * pk = &_pk;
-#endif
+
     // setup prng
     prng_t prng0;
     prng_set( &prng0 , cpk->pk_seed , LEN_PKSEED );
@@ -149,9 +145,6 @@ int cpk_to_pk( pk_t * rpk, const cpk_t * cpk )
     // convert from extcpk_t to pk_t
     extcpk_to_pk( rpk , pk );
 
-#if defined(_MALLOC_)
-    free(pk);
-#endif
     return 0;
 }
 
@@ -240,9 +233,7 @@ void generate_secretkey( sk_t* sk, const unsigned char *sk_seed )
 int sk_to_pk( pk_t * rpk , const sk_t* isk )
 {
     ext_cpk_t * pk = (ext_cpk_t*)malloc(sizeof(ext_cpk_t));
-    if( NULL == pk ) return -1;
-    sk_t *sk = (sk_t*)malloc(sizeof(sk_t));
-    if( NULL == sk ) { free(pk); return -1; }
+    sk_t * sk = (sk_t*)malloc(sizeof(sk_t));
 
     memcpy( sk , isk , sizeof(sk_t) );
     calculate_t4( sk->t4 , sk->t1 , sk->t3 );  // convert to t2
@@ -261,8 +252,6 @@ int sk_to_pk( pk_t * rpk , const sk_t* isk )
     extcpk_to_pk( rpk , pk );     // convert the public key from ext_cpk_t to pk_t.
 
     memset( sk , 0 , sizeof(sk_t) );
-    free(pk);
-    free(sk);
     return 0;
 }
 
@@ -270,15 +259,11 @@ int sk_to_pk( pk_t * rpk , const sk_t* isk )
 int generate_keypair( pk_t * rpk, sk_t* sk, const unsigned char *sk_seed )
 {
     _generate_secretkey( sk , sk_seed );
-
+    
     // set up a temporary structure ext_cpk_t for calculating public key.
-#if defined(_MALLOC_)
-    ext_cpk_t * pk = malloc(sizeof(ext_cpk_t));
-    if( NULL == pk ) return -1;
-#else
     ext_cpk_t _pk;
     ext_cpk_t * pk = &_pk;
-#endif
+    
     calculate_Q_from_F( pk, sk , sk );   // compute the public key in ext_cpk_t format.
     calculate_t4( sk->t4 , sk->t1 , sk->t3 );
 
@@ -292,9 +277,6 @@ int generate_keypair( pk_t * rpk, sk_t* sk, const unsigned char *sk_seed )
 
     extcpk_to_pk( rpk , pk );     // convert the public key from ext_cpk_t to pk_t.
 
-#if defined(_MALLOC_)
-    free(pk);
-#endif
     return 0;
 }
 
@@ -337,13 +319,9 @@ int generate_secretkey_cyclic( sk_t* sk, const unsigned char *pk_seed , const un
     calculate_t4( sk->t4 , sk->t1 , sk->t3 );
 
     // prng for pk
-#if defined(_MALLOC_)
-    sk_t * Qs = malloc(sizeof(sk_t));
-    if(NULL==Qs) return -1;
-#else
     sk_t inst_Qs;
     sk_t * Qs = &inst_Qs;
-#endif
+    
     prng_t * prng1 = &_prng;
     prng_set( prng1 , pk_seed , LEN_PKSEED );
     generate_B1_B2( Qs->l1_F1 , prng1 );
@@ -356,9 +334,7 @@ int generate_secretkey_cyclic( sk_t* sk, const unsigned char *pk_seed , const un
 
     // clean
     memset( Qs , 0 , sizeof(sk_t) );  // since Qs has benn modified by sk
-#if defined(_MALLOC_)
-    free(Qs);
-#endif
+
     return 0;
 }
 
@@ -384,13 +360,9 @@ int generate_keypair_cyclic( cpk_t * pk, sk_t* sk, const unsigned char *pk_seed 
     calculate_t4( sk->t4 , sk->t1 , sk->t3 );    // t2 <- t4
 
     // prng for pk
-#if defined(_MALLOC_)
-    sk_t * Qs = (sk_t*)malloc(sizeof(sk_t));
-    if( NULL==Qs) return -1;
-#else
     sk_t _Qs;
     sk_t * Qs = &_Qs;
-#endif
+
     prng_t * prng1 = &prng;
     prng_set( prng1 , pk_seed , LEN_PKSEED );
     generate_B1_B2( Qs->l1_F1 , prng1 );  // generating l1_Q1, l1_Q2, l2_Q1, l2_Q2, l2_Q3, l2_Q5, l2_Q6
@@ -432,19 +404,12 @@ int generate_compact_keypair_cyclic( cpk_t * pk, csk_t* rsk, const unsigned char
     memcpy( rsk->pk_seed , pk_seed , LEN_PKSEED );
     memcpy( rsk->sk_seed , sk_seed , LEN_SKSEED );
 
-#if defined(_MALLOC_)
-    sk_t * sk = malloc(sizeof(sk_t));
-    if(NULL==sk) return -1;
-#else
     sk_t _sk;
     sk_t * sk = &_sk;
-#endif
+
     int r = generate_keypair_cyclic( pk , sk , pk_seed , sk_seed );
     memset( sk , 0 , sizeof(sk_t) ); // clean
 
-#if defined(_MALLOC_)
-    free(sk);
-#endif
     return r;
 }
 

@@ -3,12 +3,12 @@ OUTPUT_ARCH(riscv)
 
 ENTRY( _start )
 
-__ram_size = 384K;
+__ram_size = 1024K;
 
 MEMORY
 {
-  rom (wxa!ri) : ORIGIN = 0x80000000, LENGTH = 256K
-  ram (wxa!ri) : ORIGIN = 0x80040000, LENGTH = 128K
+  rom (wxa!ri) : ORIGIN = 0x80000000, LENGTH = 512K
+  ram (wxa!ri) : ORIGIN = 0x80080000, LENGTH = 512K
 }
 
 INCLUDE nonvolatile.ld

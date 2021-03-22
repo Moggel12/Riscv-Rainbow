@@ -5,7 +5,7 @@
 ///  Created by Bassham, Lawrence E (Fed) on 8/29/17.
 ///  Copyright © 2017 Bassham, Lawrence E (Fed). All rights reserved.
 ///
-
+#include <sendfn.h>
 #include <string.h>
 #include "rng.h"
 #include "aes/api_aes.h"
@@ -173,7 +173,6 @@ randombytes(unsigned char *x, unsigned long long xlen)
 {
     unsigned char   block[16];
     int             i = 0;
-    
     while ( xlen > 0 ) {
         //increment V
         for (int j=15; j>=0; j--) {

@@ -19,35 +19,36 @@
 #include "crypto_sign.h"
 #endif
 
-
 int
 crypto_sign_keypair(unsigned char *pk, unsigned char *sk)
 {
     unsigned char sk_seed[LEN_SKSEED] = {0};
     randombytes( sk_seed , LEN_SKSEED );
-
-#if defined _RAINBOW_CLASSIC
+//#if defined _RAINBOW_CLASSIC
 
     int r = generate_keypair( (pk_t*) pk , (sk_t*) sk , sk_seed );
+/*#elif defined _RAINBOW_CIRCUMZENITHAL*/
+    
+    /*send_string("DEBUG", "CIRCUMZENITHAL DEFINED");*/
+    /*unsigned char pk_seed[LEN_PKSEED] = {0};*/
+    /*randombytes( pk_seed , LEN_PKSEED );*/
+    /*int r = generate_keypair_cyclic( (cpk_t*) pk , (sk_t*) sk , pk_seed , sk_seed );*/
 
-#elif defined _RAINBOW_CIRCUMZENITHAL
+    /*for(int i=0;i<LEN_PKSEED;i++) pk_seed[i]=0;*/
+/*#elif defined _RAINBOW_COMPRESSED*/
 
-    unsigned char pk_seed[LEN_PKSEED] = {0};
-    randombytes( pk_seed , LEN_PKSEED );
-    int r = generate_keypair_cyclic( (cpk_t*) pk , (sk_t*) sk , pk_seed , sk_seed );
+    /*send_string("DEBUG", "COMPRESSED DEFINED"); */
+    /*unsigned char pk_seed[LEN_PKSEED] = {0};*/
+    /*randombytes( pk_seed , LEN_PKSEED );*/
+    /*int r = generate_compact_keypair_cyclic( (cpk_t*) pk , (csk_t*) sk , pk_seed , sk_seed );*/
 
-    for(int i=0;i<LEN_PKSEED;i++) pk_seed[i]=0;
-#elif defined _RAINBOW_COMPRESSED
-
-    unsigned char pk_seed[LEN_PKSEED] = {0};
-    randombytes( pk_seed , LEN_PKSEED );
-    int r = generate_compact_keypair_cyclic( (cpk_t*) pk , (csk_t*) sk , pk_seed , sk_seed );
-
-    for(int i=0;i<LEN_PKSEED;i++) pk_seed[i]=0;
-#else
-error here
-#endif
+    /*for(int i=0;i<LEN_PKSEED;i++) pk_seed[i]=0;*/
+/*#else*/
+    /*send_string("DEBUG", "ERROR");*/
+/*error here*/
+/*#endif*/
     for(int i=0;i<LEN_SKSEED;i++) sk_seed[i]=0;
+
     return r;
 }
 
