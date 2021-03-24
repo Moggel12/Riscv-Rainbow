@@ -6,7 +6,7 @@ A Risc-V implementation of the Rainbow MPKC, made for the BADM500 course at Univ
 | Date | Work | Done |
 |---|---| :---:|
 | 03-03-21 | Initial literature search |X|
-| 11-03-21 | Reference implementation in C done |  |
+| 11-03-21 | Reference implementation in C done |X|
 | 18-03-21 | Initial sections of report done |X|
 | 28-03-21 | Preliminary section of report written |  |
 | 01-04-21 | First few optimizations done/planned |  |
