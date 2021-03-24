@@ -12,75 +12,95 @@
 
 #include "api.h"
 
-int main( int argc , char ** argv )
+int get_text(unsigned char *text, int *text_len);
+
+int main(void)
 {
-	printf( "%s\n", CRYPTO_ALGNAME );
+    unsigned char *msg;
+    int mlen;
+    unsigned char *signature;
+    int slen;
+    int r;
+	uint8_t * pk[CRYPTO_PUBLICKEYBYTES];
 
-        printf("sk size: %lu\n", CRYPTO_SECRETKEYBYTES );
-        printf("pk size: %lu\n",  CRYPTO_PUBLICKEYBYTES );
-        printf("hash size: %d\n", _HASH_LEN );
-        printf("signature size: %d\n\n", CRYPTO_BYTES );
+    send_start();
+    send_string("name", CRYPTO_ALGNAME);
+    send_unsigned("sk size", CRYPTO_SECRETKEYBYTES, 10);
+    send_unsigned("sk size", CRYPTO_PUBLICKEYBYTES, 10);
+    send_unsigned("hash size", _HASH_LEN, 10);
+    send_unsigned("signature size", CRYPTO_BYTES, 10);
 
-	if( 4 != argc ) {
-                printf("Usage:\n\n\trainbow-verify pk_file_name signature_file_name message_file_name\n\n");
-                return -1;
-        }
+    send_string("Status", "Starting retrival of public key");
 
-	uint8_t * pk = (uint8_t *) malloc( CRYPTO_PUBLICKEYBYTES );
+    for (size_t i = 0; i < CRYPTO_PUBLICKEYBYTES; i++) {
+        unsigned char c = (unsigned char) hal_getc();
+        pk[i] = c;
+        send_bytes("Status", &c, 1);
+        /*hal_putc("1");*/
+    } 
+    send_string("Status", "Secret key retrived");
 
-	FILE * fp;
-	int r;
+    r = get_text(msg, &mlen);
+    
+    if (r != 0) {
+        return -1;
+    }
 
-	fp = fopen( argv[1] , "r");
-	if( NULL == fp ) {
-		printf("fail to open public key file.\n");
-		return -1;
-	}
-	r = byte_fget( fp ,  pk , CRYPTO_PUBLICKEYBYTES );
-	fclose( fp );
-	if( CRYPTO_PUBLICKEYBYTES != r ) {
-		printf("fail to load key file.\n");
-		return -1;
-	}
+    r = get_text(signature, &slen);
 
-	unsigned char * msg = NULL;
-	unsigned long long mlen = 0;
-	r = byte_read_file( &msg , &mlen , argv[3] );
-	if( 0 != r ) {
-		printf("fail to read message file.\n");
-		return -1;
-	}
-
-	unsigned char * signature = malloc( mlen + CRYPTO_BYTES );
-	if( NULL == signature ) {
-		printf("alloc memory for signature buffer fail.\n");
-		return -1;
-	}
-	memcpy( signature , msg , mlen );
-	fp = fopen( argv[2] , "r");
-	if( NULL == fp ) {
-		printf("fail to open signature file.\n");
-		return -1;
-	}
-	r = byte_fget( fp ,  signature + mlen , CRYPTO_BYTES );
-	fclose( fp );
-	if( CRYPTO_BYTES != r ) {
-		printf("fail to load signature file.\n");
-		return -1;
-	}
+    if (r != 0) {
+        return -1;
+    }
 
 	r = crypto_sign_open( msg , &mlen , signature , mlen + CRYPTO_BYTES , pk );
 
 	free( msg );
 	free( signature );
-	free( pk );
 
 	if( 0 == r ) {
-		printf("Correctly verified.\n" );
-		return 0;
-	} else {
-		printf("Verification fails.\n" );
-		return -1;
-	}
+        send_string("Status", "Correctly verified." );
+	    return 0;
+	} 
+
+    send_string("Status", "Verification failed.");
+    return -1;
+	
 }
 
+// Blocks until the host provides some text
+int get_text(unsigned char *text, int *text_len) {
+	/*
+	 * The protocol used to communicate the message requires a null-byte before and after the size of the message, or (if the length of the message is <= 255) a single character
+	 */
+    send_string("Status", "Starting retrieval of text");
+    int code = hal_getc();
+    
+    if (code == 0) {
+        
+        int old_code = 0;
+        
+        do {
+            old_code = code;
+            code += hal_getc();
+            
+            if ((old_code == 0) && (code == 0)) {
+                send_string("Status", "Failed to obtain text size: Size is 0");
+                return -1;
+            }
+            
+        } while (old_code > 0);
+    }
+
+    text_len = &code;
+    text = (unsigned char *) malloc(*text_len + CRYPTO_BYTES);
+	if( NULL == text ) {
+        send_string("Status", "Failed to allocate text buffer. Aborting");
+	    return -1;
+	}
+
+    for (int i = 0; i < *text_len; i++) {
+        text[i] = (unsigned char) hal_getc();
+    }
+
+    return 0;
+}

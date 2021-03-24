@@ -50,20 +50,19 @@ CFLS = $(wildcard $(SRCDIR)/src/$(PROJ_DIR)/*.c)
 #rainbow-genkey.elf: $(GENKEY_OBJ)
 #TARGETS += rainbow-genkey.bin
 
-KEYSIGN_SRC = src/rainbow-sign.c $(CFLS)
-KEYSIGN_OBJ = $(call objs,$(KEYSIGN_SRC))
-rainbow-sign.elf: $(KEYSIGN_OBJ)
-TARGETS += rainbow-sign.bin
+#KEYSIGN_SRC = src/rainbow-sign.c $(CFLS)
+#KEYSIGN_OBJ = $(call objs,$(KEYSIGN_SRC))
+#rainbow-sign.elf: $(KEYSIGN_OBJ)
+#TARGETS += rainbow-sign.bin
 
-#VERIFY_SRC = src/rainbow-verify.c $(CFLS)
-#VERIFY_OBJ = $(call objs,$(VERIFY_SRC))
-#rainbow-verify.elf: $(VERIFY_OBJ)
-#TARGETS += rainbox-verify.bin
+VERIFY_SRC = src/rainbow-verify.c $(CFLS)
+VERIFY_OBJ = $(call objs,$(VERIFY_SRC))
+rainbow-verify.elf: $(VERIFY_OBJ)
+TARGETS += rainbow-verify.bin
 
 # Don't forget to add all objects to the OBJ variable
 #OBJ += $(DEMO_OBJ)
-
-OBJ += $(DEMO_OBJ) $(GENKEY_OBJ) $(KEYSIGN_OBJ) $(VERIFY_OBJ) 
+OBJ += $(GENKEY_OBJ) $(KEYSIGN_OBJ) $(VERIFY_OBJ) 
 targets: $(TARGETS)
 
 # Include generated dependencies
@@ -99,5 +98,5 @@ Makefile : ;
 
 .PHONY: clean
 clean:
-	rm -rf $(OBJDIR) 
+	rm -rf $(OBJDIR) src/Ia_Classic_Reference/*.o src/Ia_Compressed_Reference/*.o src/Ia_Classic_Reference/*.d src/Ia_Compressed_Reference/*.d 
 endif

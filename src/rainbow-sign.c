@@ -48,9 +48,9 @@ int main(void)
 	 * This iteration of the RAINBOW-RISCV implementation reads one byte of the key at a time
      * The key is provided by the host machine
 	 */
-    send_string("Status", "Starting retrival of secret key");
-    for (size_t i = 0; i < CRYPTO_SECRETKEYBYTES; i++) {
-        unsigned char c = (unsigned char) hal_getc();
+    send_string("Status", "Starting retrival of secret key"); 
+    for (size_t i = 0; i < CRYPTO_SECRETKEYBYTES; i++) { 
+        unsigned char c = (unsigned char) hal_getc(); 
         _sk[i] = c;
         send_bytes("Status", &c, 1);
         /*hal_putc("1");*/
@@ -88,6 +88,10 @@ int main(void)
 
     int mlen = code;
     unsigned char *msg = (unsigned char *) malloc(mlen);
+    if (msg == NULL) {
+        send_string("Status", "Failed to allocate message buffer. Aborting.");
+        return -1;
+    }
 
     for (int i = 0; i < mlen; i++) {
         msg[i] = (unsigned char) hal_getc();
@@ -102,7 +106,7 @@ int main(void)
 	// }
 
 	// unsigned char * signature = malloc( mlen + CRYPTO_BYTES );
-	unsigned char signature[mlen + CRYPTO_BYTES];
+	unsigned char signature = (unsigned char *)malloc(mlen + CRYPTO_BYTES);
 
 	unsigned long long smlen = 0;
 	r = crypto_sign( signature, &smlen, msg , mlen , _sk );
