@@ -9,8 +9,9 @@ A Risc-V implementation of the Rainbow MPKC, made for the BADM500 course at Univ
 | 11-03-21 | Reference implementation in C done |X|
 | 18-03-21 | Initial sections of report done |X|
 | 28-03-21 | Preliminary section of report written |  |
-| 01-04-21 | First few optimizations done/planned |  |
-| 22-04-21 | Further optimizations |  |
+| 01-04-21 | First few optimizations planned |X|
+| 18-04-21 | Implementation section written |  |
+| 22-04-21 | Delivery of bitsliced verification algorithm |  |
 | 14-05-21 | Report in finishing stages |  |
 | 01-06-21 | Hard deadline for everything |  |
 
