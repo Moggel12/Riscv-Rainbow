@@ -1,0 +1,3 @@
+[submodule "test/rainbow-submission-round2"]
+	path = test/rainbow-submission-round2
+	url = git@github.com:fast-crypto-lab/rainbow-submission-round2.git

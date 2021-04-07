@@ -5,6 +5,9 @@
 #ifndef _GF16_H_
 #define _GF16_H_
 
+//#define LOOKUP_INC_ZERO
+//#define LOOKUP_EXCL_ZERO
+
 #include <stdint.h>
 
 // gf4 := gf2[x]/x^2+x+1
@@ -84,6 +87,32 @@ static inline uint8_t gf16_is_nonzero(uint8_t a) {
 
 // gf16 := gf4[y]/y^2+y+x
 static inline uint8_t gf16_mul(uint8_t a, uint8_t b) {
+
+#if defined(LOOKUP_INC_ZERO)
+    static const uint8_t table[256] = 
+    {
+         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        ,0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f
+        ,0,2,3,1,8,a,b,9,c,e,f,d,4,6,7,5
+        ,0,3,1,2,c,f,d,e,4,7,5,6,8,b,9,a
+        ,0,4,8,c,6,2,e,a,b,f,3,7,d,9,5,1
+        ,0,5,a,f,2,7,8,d,3,6,9,c,1,4,b,e
+        ,0,6,b,d,e,8,5,3,7,1,c,a,9,f,2,4
+        ,0,7,9,e,a,d,3,4,f,8,6,1,5,2,c,b
+        ,0,8,c,4,b,3,7,f,d,5,1,9,6,e,a,2
+        ,0,9,e,7,f,6,1,8,5,c,b,2,a,3,4,d
+        ,0,a,f,5,3,9,c,6,1,b,e,4,2,8,d,7
+        ,0,b,d,6,7,c,a,1,9,2,4,f,e,5,3,8
+        ,0,c,4,8,d,1,9,5,6,a,2,e,b,7,f,3
+        ,0,d,6,b,9,4,f,2,e,3,8,5,7,a,1,c
+        ,0,e,7,9,5,b,2,c,a,4,d,3,f,1,8,6
+        ,0,f,5,a,1,e,4,b,2,d,7,8,3,c,6,9
+    };
+    
+    return table[(a*16)+b];
+#elif defined(LOOKUP_EXCL_ZERO)
+    return 0;
+#else
     uint8_t a0 = a & 3;
     uint8_t a1 = (a >> 2);
     uint8_t b0 = b & 3;
@@ -93,6 +122,7 @@ static inline uint8_t gf16_mul(uint8_t a, uint8_t b) {
     uint8_t a0b1_a1b0 = gf4_mul(a0 ^ a1, b0 ^ b1) ^ a0b0 ^ a1b1;
     uint8_t a1b1_x2 = gf4_mul_2(a1b1);
     return ((a0b1_a1b0 ^ a1b1) << 2) ^ a0b0 ^ a1b1_x2;
+#endif
 }
 
 static inline uint8_t gf16_squ(uint8_t a) {

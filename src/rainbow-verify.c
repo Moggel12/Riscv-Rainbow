@@ -23,22 +23,12 @@ int main(void)
     int r;
 	uint8_t * pk[CRYPTO_PUBLICKEYBYTES];
 
-    send_start();
-    send_string("name", CRYPTO_ALGNAME);
-    send_unsigned("sk size", CRYPTO_SECRETKEYBYTES, 10);
-    send_unsigned("sk size", CRYPTO_PUBLICKEYBYTES, 10);
-    send_unsigned("hash size", _HASH_LEN, 10);
-    send_unsigned("signature size", CRYPTO_BYTES, 10);
-
-    send_string("Status", "Starting retrival of public key");
 
     for (size_t i = 0; i < CRYPTO_PUBLICKEYBYTES; i++) {
         unsigned char c = (unsigned char) hal_getc();
         pk[i] = c;
-        send_bytes("Status", &c, 1);
         /*hal_putc("1");*/
     } 
-    send_string("Status", "Secret key retrived");
 
     r = get_text(msg, &mlen);
     
@@ -57,6 +47,14 @@ int main(void)
 	free( msg );
 	free( signature );
 
+
+    send_start();
+    send_string("name", CRYPTO_ALGNAME);
+    send_unsigned("sk size", CRYPTO_SECRETKEYBYTES, 10);
+    send_unsigned("sk size", CRYPTO_PUBLICKEYBYTES, 10);
+    send_unsigned("hash size", _HASH_LEN, 10);
+    send_unsigned("signature size", CRYPTO_BYTES, 10);
+
 	if( 0 == r ) {
         send_string("Status", "Correctly verified." );
 	    return 0;
@@ -72,7 +70,6 @@ int get_text(unsigned char *text, int *text_len) {
 	/*
 	 * The protocol used to communicate the message requires a null-byte before and after the size of the message, or (if the length of the message is <= 255) a single character
 	 */
-    send_string("Status", "Starting retrieval of text");
     int code = hal_getc();
     
     if (code == 0) {
@@ -84,7 +81,6 @@ int get_text(unsigned char *text, int *text_len) {
             code += hal_getc();
             
             if ((old_code == 0) && (code == 0)) {
-                send_string("Status", "Failed to obtain text size: Size is 0");
                 return -1;
             }
             
@@ -94,7 +90,6 @@ int get_text(unsigned char *text, int *text_len) {
     text_len = &code;
     text = (unsigned char *) malloc(*text_len + CRYPTO_BYTES);
 	if( NULL == text ) {
-        send_string("Status", "Failed to allocate text buffer. Aborting");
 	    return -1;
 	}
 

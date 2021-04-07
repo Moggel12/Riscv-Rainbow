@@ -30,30 +30,16 @@ CFLS = $(wildcard $(SRCDIR)/src/$(PROJ_DIR)/*.c)
 # additional dependencies for your the target TARGETNAME.elf file (just
 # define the dependencies, a generic rule for .elf target exists in
 # config.mk).
-#DEMO_SRC = src/demo/demo.c $(wildcard $(SRCDIR)/src/demo/$(PROJ_DIR)/*.c)
-#DEMO_OBJ = $(call objs,$(DEMO_SRC))
-#demo.elf: $(DEMO_OBJ)
-#TARGETS += demo.bin
 
-#IODEMO_SRC = src/iodemo.c
-#IODEMO_OBJ = $(call objs,$(IODEMO_SRC))
-#iodemo.elf: $(IODEMO_OBJ)
-#TARGETS += iodemo.bin
+GENKEY_SRC = src/rainbow-genkey.c $(CFLS)
+GENKEY_OBJ = $(call objs,$(GENKEY_SRC))
+rainbow-genkey.elf: $(GENKEY_OBJ)
+TARGETS += rainbow-genkey.bin
 
-#CUSTOMDEMO_SRC = src/customdemo.c
-#CUSTOMDEMO_OBJ = $(call objs,$(CUSTOMDEMO_SRC))
-#customdemo.elf: $(CUSTOMDEMO_OBJ)
-#TARGETS += customdemo.bin
-
-#GENKEY_SRC = src/rainbow-genkey.c $(CFLS)
-#GENKEY_OBJ = $(call objs,$(GENKEY_SRC))
-#rainbow-genkey.elf: $(GENKEY_OBJ)
-#TARGETS += rainbow-genkey.bin
-
-#KEYSIGN_SRC = src/rainbow-sign.c $(CFLS)
-#KEYSIGN_OBJ = $(call objs,$(KEYSIGN_SRC))
-#rainbow-sign.elf: $(KEYSIGN_OBJ)
-#TARGETS += rainbow-sign.bin
+KEYSIGN_SRC = src/rainbow-sign.c $(CFLS)
+KEYSIGN_OBJ = $(call objs,$(KEYSIGN_SRC))
+rainbow-sign.elf: $(KEYSIGN_OBJ)
+TARGETS += rainbow-sign.bin
 
 VERIFY_SRC = src/rainbow-verify.c $(CFLS)
 VERIFY_OBJ = $(call objs,$(VERIFY_SRC))
