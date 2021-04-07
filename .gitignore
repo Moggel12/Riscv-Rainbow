@@ -8,3 +8,4 @@ compile_commands.json
 build/
 .gdb_history
 src/external/
+test/target/
