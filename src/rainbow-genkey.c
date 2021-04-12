@@ -69,7 +69,7 @@ void get_rand_seed(unsigned char *rnd_seed) {
 
     for (i = 0; i < 48; i++) {
         rnd_seed[i] = (unsigned char) hal_getc();
-        hal_putc(rnd_seed[i]);
+//        hal_putc(rnd_seed[i]);
     }
 }
 

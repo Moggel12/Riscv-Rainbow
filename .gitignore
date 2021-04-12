@@ -9,3 +9,6 @@ build/
 .gdb_history
 src/external/
 test/target/
+test/KAT_*
+env
+

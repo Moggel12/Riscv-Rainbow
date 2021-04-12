@@ -108,7 +108,7 @@ static inline uint8_t gf16_mul(uint8_t a, uint8_t b) {
         ,0,e,7,9,5,b,2,c,a,4,d,3,f,1,8,6
         ,0,f,5,a,1,e,4,b,2,d,7,8,3,c,6,9
     };
-    
+
     return table[(a*16)+b];
 #elif defined(LOOKUP_EXCL_ZERO)
     return 0;
