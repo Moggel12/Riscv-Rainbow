@@ -11,4 +11,5 @@ src/external/
 test/target/
 test/KAT_*
 env
-
+__pycache__/*
+test/__pycache__
