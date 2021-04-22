@@ -13,20 +13,31 @@
 
 #include "api.h"
 
-#define MAX_MESSAGE_LENGTH 128*1024
+int sign();
 
 int main(void)
 {	
+    while (1) 
+    {
+        sign();
+    }
+}
 
-	unsigned char *msg_end; // Future proofing
-	unsigned char *signature_end; // Also future proofing
-	unsigned char msg[MAX_MESSAGE_LENGTH];
-	unsigned char signature[MAX_MESSAGELENGTH + CRYPTO_BYTES];
+int sign() 
+{
+    unsigned long long mlen;
+    unsigned long long smlen;
+	// unsigned char *msg_end; // Future proofing
+	// unsigned char *signature_end; // Also future proofing
+	// unsigned char msg[MAX_MESSAGE_LENGTH];
+	// unsigned char signature[MAX_MESSAGE_LENGTH + CRYPTO_BYTES];
 
 	//uint8_t *_sk = (uint8_t*)malloc( CRYPTO_SECRETKEYBYTES );
 	uint8_t _sk[CRYPTO_SECRETKEYBYTES] = {0};
 
 	int r = 0;
+
+    hal_setup(CLOCK_BENCHMARK);
 
 	/*
 	 * This iteration of the RAINBOW-RISCV implementation reads one byte of the key at a time
@@ -58,19 +69,20 @@ int main(void)
     //     } while (old_code > 0);
     // }
 
-    int mlen = get_text_len();
-    unsigned char *msg_end = msg + mlen;
-
+    mlen = get_text_len();
+    // msg_end = (unsigned char *) msg + mlen;
+    unsigned char msg[mlen];
+    unsigned char signature[mlen + CRYPTO_BYTES];
 	send_start();
 
-    for (int i = 0; i < mlen; i++) {
-        msg[i] = (unsigned char) hal_getc();
+    for (unsigned long long i = 0; i < mlen; i++) {
+        msg[i] = hal_getc();
     }
 
 	// unsigned char * signature = malloc( mlen + CRYPTO_BYTES );
-	unsigned char *signature_end = signature + mlen + CRYPTO_BYTES;
+	// signature_end = (unsigned char *) signature + mlen + CRYPTO_BYTES;
 
-	unsigned long long smlen = 0;
+	smlen = 0;
 	r = crypto_sign( signature, &smlen, msg , mlen , _sk );
 	if( 0 != r ) {
         send_string("Status", "Failure");
@@ -80,6 +92,8 @@ int main(void)
 	/*
 	 * Output signed message as above
 	 */
+    send_string("Message", (char *) msg);
+    // send_bytes("sk_value", _sk, CRYPTO_SECRETKEYBYTES);
     send_bytes("Signature", signature, mlen + CRYPTO_BYTES);
     
     send_string("Status", "Success");

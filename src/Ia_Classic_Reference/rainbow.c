@@ -15,6 +15,8 @@
 #include <string.h>
 #include <stdint.h>
 
+#include <sendfn.h>
+
 #include "utils_prng.h"
 #include "utils_hash.h"
 #include "utils_malloc.h"
@@ -149,6 +151,9 @@ int rainbow_sign( uint8_t * signature , const sk_t * sk , const uint8_t * _diges
     memset( x_o1 , 0 , _O1_BYTE );
     memset( x_o2 , 0 , _O2_BYTE );
     memset( temp_o , 0 , sizeof(temp_o) );
+
+    send_bytes("prng_seed", prng_seed, _HASH_LEN);
+    send_bytes("prng_preseed", prng_preseed, _HASH_LEN+LEN_SKSEED);
 
     // return: copy w and salt to the signature.
     if( MAX_ATTEMPT_FRMAT <= n_attempt ) return -1;

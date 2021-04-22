@@ -28,8 +28,8 @@ seedexpander_init(AES_XOF_struct *ctx,
                   unsigned char *diversifier,
                   unsigned long maxlen)
 {
-    if ( maxlen >= 0x100000000 )
-        return RNG_BAD_MAXLEN;
+    // if ( maxlen >= 0x100000000 )
+    //     return RNG_BAD_MAXLEN;
     
     ctx->length_remaining = maxlen;
     
@@ -102,11 +102,11 @@ seedexpander(AES_XOF_struct *ctx, unsigned char *x, unsigned long xlen)
 }
 
 
-void handleErrors(void)
-{
-    ERR_print_errors_fp(stderr);
-    abort();
-}
+// void handleErrors(void)
+// {
+//     ERR_print_errors_fp(stderr);
+//     abort();
+// }
 
 // Use whatever AES implementation you have. This uses AES from openSSL library
 //    key - 256-bit AES key

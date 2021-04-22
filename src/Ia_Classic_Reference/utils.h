@@ -13,7 +13,7 @@
 extern  "C" {
 #endif
 
-int get_text_len(unsigned char *text);
+int get_text_len();
 
 #ifdef  __cplusplus
 }

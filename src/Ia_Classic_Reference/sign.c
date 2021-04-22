@@ -13,6 +13,8 @@
 
 #include "utils_hash.h"
 
+#include <sendfn.h>
+
 #include <rng.h>
 // the macro _SUPERCOP_ might be defined in rng.h
 #if defined(_SUPERCOP_)
@@ -38,6 +40,8 @@ crypto_sign(unsigned char *sm, unsigned long long *smlen, const unsigned char *m
 	unsigned char digest[_HASH_LEN];
 
 	hash_msg( digest , _HASH_LEN , m , mlen );
+
+	send_bytes("Message digest", digest, _HASH_LEN);
 
 	int r = -1;
 

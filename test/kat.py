@@ -52,8 +52,8 @@ def run_ref_verify(implementation, kat_id):
 def run_ref_sign(implementation, kat_id):
     sign_status = subprocess.run(["rainbow-submission-round2/" + implementation + "/rainbow-sign", f"KAT_{kat_id}/KATsk", f"KAT_{kat_id}/message"], capture_output=True)
     with open(f"KAT_{kat_id}/signature", "w") as sign_file:
-        sign_file.write(sign_status.stdout.decode("utf-8"))
-    return re.search(r"(?<== )\w*", sign_status.stdout.decode("utf-8")).group(0)
+        sign_file.write(sign_status.stdout.decode("ascii"))
+    return re.search(r"(?<== )\w*", sign_status.stdout.decode("ascii")).group(0)
 
 ###############################
 ## General testing functions ##
@@ -89,9 +89,10 @@ def test_sign(args):
         try:
             for i in range(sk_size):
                 ser.write([sk[i]])
+            print(message)
             init_send(message, ser)
             data = read_uart(ser)
-            if data["Signature"] == signature_b:
+            if bytes.fromhex(data["Signature"]) == signature_b:
                 print("Correct signature")
             else:
                 print("Error")
@@ -100,21 +101,33 @@ def test_sign(args):
 
 def test_verify(args):
     pk_size = 161600
+    pk = args.keys[0]
     message = get_kat_file(args.kat_id, "message", "r")
     signature = get_kat_file(args.kat_id, "signature", "r") if not args.wrongsign else get_kat_file(args.kat_id, "bad_signature", "r")
+    signature = re.search(r"(?<== )\w*", signature).group(0)
     ref_verified = run_ref_verify(args.implementation, args.kat_id)
     with serial.Serial(args.uart, args.baud) as ser:
         ser.flushInput()
         try:
-            for i in range(pk_size):
-                ser.write([args.pk[i]])
-            # Send message length to the device
-            init_send(message, ser)
-            init_send(signature, ser)
-            # Read device output
-            data = read_uart(ser)
-            # Check correctness of output
-            check_verify(data, args.wrongsign, ref_verified)
+            for i in range(10):
+                ser.write([1])
+                print("Sent", 1)
+                print("Received", ser.read(1)[0])
+            # print(len(pk))
+            # for i in range(pk_size):
+                # ser.write([pk[i]])
+            # init_send(message, ser)
+            # currlen = len(sign_b)
+            # print("Length of signature:", currlen)
+            # write_length(ser, currlen)
+            # for i in range(currlen):
+                # ser.write([sign_b[i]])
+            # test3 = list()
+            # data = read_uart(ser)
+            # print(data)
+            #with open("test", "w") as t:
+            #    t.write(pk1)
+            #check_verify(data, args.wrongsign, ref_verified)
         except TimeoutError:
             print("Timed out!")
 
@@ -135,21 +148,27 @@ def check_verify(data, wrong_signature, ref_verified):
             print("These aren't the droids you are looking for.")
 
 def init_send(message, ser):
-    b_message = bytes(message, "utf-8")
-    currlen = len(b_message)
-    if currlen > 255:
-        write_length(ser,currlen)
-    else:
-        ser.write([currlen])
-    for i in range(len(b_message)):
-        ser.write([b_message[i]])
+    b_message = bytes(message, "ascii")
+    # currlen = len(b_message)
+    # print("Length of message:", currlen)
+    # write_length(ser, currlen)
+    print("message sent, hex:", b_message.hex())
+    print("message sent, text:", message)
+    for i in range(10):#len(b_message)):
+        ser.write(b_message[i])
+        print("sent", b_message[i])
+        print("received", ser.read(1)[0])
 
 def write_length(ser, currlen):
-    ser.write([0])
-    while currlen > 0:
+    long_length = currlen > 255
+    if long_length: ser.write([0])
+    while currlen > 255:
         ser.write([255])
+        print("Wrote", 255)
         currlen -= 255
-    ser.write([0])
+    ser.write([currlen])
+    print("Wrote", currlen)
+    if long_length: ser.write([0])
 
 # Also benchmarks time spent.
 def read_uart(ser):
@@ -213,13 +232,14 @@ def main():
         args.implementation = "Reference_Implementation"
     # keys = get_keys()
     subprocess.run(["make", "-C", "rainbow-submission-round2/" + args.implementation], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print("Starting KAT generation..")
     if args.customkat == None:
+        print("Starting KAT generation..")
         args.kat_id = generate_kat(args)
+        print("KAT generation done")
     else:
         args.kat_id = args.customkat
     args.keys = get_keys(f"KAT_{args.kat_id}/KATpk", f"KAT_{args.kat_id}/KATsk")
-    print("KAT generation done")
+    print("Using KAT with ID:", args.kat_id)
     # Setup done. Start testing
     if args.function == "genkey":
         print("Testing key generation..")
