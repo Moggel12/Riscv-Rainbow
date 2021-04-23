@@ -109,25 +109,19 @@ def test_verify(args):
     with serial.Serial(args.uart, args.baud) as ser:
         ser.flushInput()
         try:
-            for i in range(10):
-                ser.write([1])
-                print("Sent", 1)
-                print("Received", ser.read(1)[0])
-            # print(len(pk))
-            # for i in range(pk_size):
-                # ser.write([pk[i]])
-            # init_send(message, ser)
-            # currlen = len(sign_b)
-            # print("Length of signature:", currlen)
-            # write_length(ser, currlen)
-            # for i in range(currlen):
-                # ser.write([sign_b[i]])
-            # test3 = list()
-            # data = read_uart(ser)
-            # print(data)
-            #with open("test", "w") as t:
-            #    t.write(pk1)
-            #check_verify(data, args.wrongsign, ref_verified)
+            for i in range(pk_size):
+                ser.write([pk[i]])
+            # Send message
+            init_send(message, ser)
+            # Send signature
+            sign_b = bytes.fromhex(signature)
+            currlen = len(sign_b)
+            write_length(ser, currlen)
+            for i in range(currlen):
+                ser.write([sign_b[i]])
+            # Read output
+            data = read_uart(ser)
+            check_verify(data, args.wrongsign, ref_verified)
         except TimeoutError:
             print("Timed out!")
 
@@ -142,32 +136,29 @@ def check_verify(data, wrong_signature, ref_verified):
         else:
             print("Bad signature did not work (phew)")
     else:
-        if data["Status"] == ref_verified:
+        if data["Status"] and ref_verified:
             print("Verification success!")
         else:
             print("These aren't the droids you are looking for.")
 
 def init_send(message, ser):
-    b_message = bytes(message, "ascii")
-    # currlen = len(b_message)
-    # print("Length of message:", currlen)
-    # write_length(ser, currlen)
-    print("message sent, hex:", b_message.hex())
-    print("message sent, text:", message)
-    for i in range(10):#len(b_message)):
-        ser.write(b_message[i])
-        print("sent", b_message[i])
-        print("received", ser.read(1)[0])
+    b_message = bytes(message, "ascii") 
+    currlen = len(b_message)
+    write_length(ser, currlen)
+    for i in range(len(b_message)):
+        c = ser.write([b_message[i]])
+        # print("Sent", b_message[i])
+        # if c == 1:
+            # print("Sent", b_message[i])
+            # print("Received", ser.read(1)[0])
 
 def write_length(ser, currlen):
     long_length = currlen > 255
     if long_length: ser.write([0])
     while currlen > 255:
         ser.write([255])
-        print("Wrote", 255)
         currlen -= 255
     ser.write([currlen])
-    print("Wrote", currlen)
     if long_length: ser.write([0])
 
 # Also benchmarks time spent.
