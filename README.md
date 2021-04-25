@@ -11,7 +11,7 @@ A Risc-V implementation of the Rainbow MPKC, made for the BADM500 course at Univ
 | 28-03-21 | Preliminary section of report written |X|
 | 01-04-21 | First few optimizations planned |X|
 | 18-04-21 | Implementation section written |  |
-| 22-04-21 | Delivery of lookup table implementation |  |
+| 22-04-21 | Delivery of lookup table implementation | (X) |
 | 25-04-21 | Re-evaluation of report sections written |  |
 | 12-05-21 | (Potentially) Delivery of bit-sliced implementation |  |
 | 14-05-21 | Report in finishing stages |  |
