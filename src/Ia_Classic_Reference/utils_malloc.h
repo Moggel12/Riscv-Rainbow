@@ -30,16 +30,16 @@ extern  "C" {
 #endif
 
 
-static inline
-void * adapted_alloc( size_t alignment, size_t size )
-{
-#if defined(_HAS_ALIGNED_ALLOC_)
-  return aligned_alloc( alignment, size );
-#else
-  (void)(alignment);
-  return malloc( size );
-#endif
-}
+//static inline
+//void * adapted_alloc( size_t alignment, size_t size )
+//{
+//#if defined(_HAS_ALIGNED_ALLOC_)
+  //return aligned_alloc( alignment, size );
+//#else
+  //(void)(alignment);
+  //return malloc( size );
+//#endif
+//}
 
 
 

@@ -1,6 +1,6 @@
 # Riscv-Rainbow
 ---
-A Risc-V implementation of the Rainbow MPKC, made for the BADM500 course at University of Southern Denmark. The project is a fork of https://github.com/fast-crypto-lab/rainbow-submission-round2
+A Risc-V implementation of the Rainbow MPKC, made for the BADM500 course at University of Southern Denmark. The project is basically a fork of https://github.com/fast-crypto-lab/rainbow-submission-round2
 
 ## Schedule
 | Date | Work | Done |
