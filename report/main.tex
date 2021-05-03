@@ -51,25 +51,15 @@
             \usepackage{leading}                        % Package for giving the lines spacing
             \usepackage{comment}                        % Allows to comment entire paragraph
             \usepackage{tabularx}
-            
+            \usepackage[ruled,vlined]{algorithm2e}
+
 
 		% END_FOLD
 
 	% Shortcuts and commands
 	% ------------------------
 		% BEGIN_FOLD
-			\newcommand{\en}[1]{\,\text{#1}}								% \en{} {Enhed} Format units correctly using this command.
-			\newcommand{\un}[1]{\,\text{#1}}								% \un{} {Unit}  Same as above
-			\newcommand{\dd}{\text{d}}										% \dd 			Properly formatted differential 'd'-symbol.
-
-			\newcommand{\paa}[1]{\left( #1 \right)}							% \paa{} {Parenthesis} Shorthand for scaling parentheses.
-			\newcommand{\paas}[1]{\left[ #1 \right]}						% \paas{} {Square brackets} Shorthand for square brackets
-			\newcommand{\paac}[1]{\left\lbrace #1 \right\rbrace}			% \paac{} {Braces} Shorthand for braces (curly brackets)
-			\newcommand{\mean}[1]{\left\langle #1 \right\rangle}			% \mean{} {mean value} Shorthand for mean value (Angles)
-			\newcommand{\floor}[1]{\lfloor #1 \rfloor}						% \floor{}
-			\newcommand{\ceil}[1]{\lceil #1 \rceil}							% \ceil{}
-
-			\newcommand{\code}[1]{\lstinline|#1|}							% \code{} Insert code here to have in-line code.
+  			\newcommand{\code}[1]{\lstinline|#1|}							% \code{} Insert code here to have in-line code.
 			
 			\newcommand{\br}{\newline\newline}                              % Adds an empty line
 
@@ -140,7 +130,7 @@
 		\leading{17pt}
 
 		% Header, footer
-		%\pagestyle{fancy}										% Template for header and footer
+		\pagestyle{fancy}										% Template for header and footer
 		%\fancyhf{}												% Set header and footer to empty
 
 		% Left header (inner if using twopage layout)
@@ -182,24 +172,25 @@
             \text{Ruben Niederhagen}
         \end{flushright}
     \end{minipage}\\[3cm]
-    
-	%\thispagestyle{empty} 									% No header or footer on first page
-   	\thispagestyle{fancy}										% First page with header and footer
+    %\includegraphics[width]{resources/SDU.png}
+    \thispagestyle{empty}% No header or footer on first page
+    \pagenumbering{gobble} 
+   	%\thispagestyle{fancy}										% First page with header and footer
     \newpage
-    
+    \thispagestyle{empty}
     \tableofcontents %Indholdsfortegnelse
 
     \newpage
-    
+    \pagenumbering{arabic} 
     % Include new tex files here.
     % --------------------------
-        \include{Abstract}
-        \include{Introduction}
-        \include{Preliminaries}
-        \include{Implementation}
-        \include{Optimizations}
-        \include{Evaluation}
-        \include{Conclusion}
-        \include{References}
+        \input{Abstract}
+        \input{Introduction}
+        \input{Preliminaries}
+        \input{Implementation}
+        \input{Optimizations}
+        \input{Evaluation}
+        \input{Conclusion}
+        \input{References}
 \end{document}
 
