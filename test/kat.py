@@ -146,11 +146,7 @@ def init_send(message, ser):
     currlen = len(b_message)
     write_length(ser, currlen)
     for i in range(len(b_message)):
-        c = ser.write([b_message[i]])
-        # print("Sent", b_message[i])
-        # if c == 1:
-            # print("Sent", b_message[i])
-            # print("Received", ser.read(1)[0])
+        ser.write([b_message[i]])
 
 def write_length(ser, currlen):
     long_length = currlen > 255
@@ -161,7 +157,6 @@ def write_length(ser, currlen):
     ser.write([currlen])
     if long_length: ser.write([0])
 
-# Also benchmarks time spent.
 def read_uart(ser):
         b_output = ser.read_until(bytes("}", "ascii"))
         s_output = b_output.decode("ascii")

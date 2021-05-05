@@ -39,15 +39,7 @@ void accu_eval_quad( unsigned char * accu_res , const unsigned char * trimat , c
    unsigned n = num_gfele_x;
 
    for(unsigned i=0;i<n;i++) {
-#if defined( _BLAS_AVX2_ )
-      unsigned i_start = i-(i&31);
-#elif defined( _BLAS_SSE_ )
-      unsigned i_start = i-(i&15);
-#elif defined( _BLAS_UINT64_ )
-      unsigned i_start = i-(i&7);
-#else
       unsigned i_start = i-(i&3);
-#endif
       for(unsigned j=i;j<n;j++) _xixj[j]=_x[j];
       gfv_mul_scalar( _xixj+i_start , _x[i] , n-i_start );
       for(unsigned j=i;j<n;j++) {
@@ -110,38 +102,6 @@ void madd_reduce( unsigned char * y , const unsigned char * tmp_res , unsigned v
       for(int j=0;j<accu_bit;j++) gf256v_add( tmp , tmp_res+TMPVEC_LEN*(i+j) , vec_len );
     }
     gf16v_madd( y , tmp , accu_bit ,  vec_len );
-
-#if 256 == _GFSIZE
-
-    accu_bit = 1<<4; // 16
-    gf256v_set_zero( tmp , vec_len );
-    for(int i=accu_bit;i<_GFSIZE;i+=accu_bit*2) {
-      for(int j=0;j<accu_bit;j++) gf256v_add( tmp , tmp_res+TMPVEC_LEN*(i+j) , vec_len );
-    }
-    gf256v_madd( y , tmp , accu_bit ,  vec_len );
-
-    accu_bit = 1<<5; // 32
-    gf256v_set_zero( tmp , vec_len );
-    for(int i=accu_bit;i<_GFSIZE;i+=accu_bit*2) {
-      for(int j=0;j<accu_bit;j++) gf256v_add( tmp , tmp_res+TMPVEC_LEN*(i+j) , vec_len );
-    }
-    gf256v_madd( y , tmp , accu_bit ,  vec_len );
-
-    accu_bit = 1<<6; // 64
-    gf256v_set_zero( tmp , vec_len );
-    for(int i=accu_bit;i<_GFSIZE;i+=accu_bit*2) {
-      for(int j=0;j<accu_bit;j++) gf256v_add( tmp , tmp_res+TMPVEC_LEN*(i+j) , vec_len );
-    }
-    gf256v_madd( y , tmp , accu_bit ,  vec_len );
-
-    accu_bit = 1<<7; // 128
-    gf256v_set_zero( tmp , vec_len );
-    for(int i=accu_bit;i<_GFSIZE;i+=accu_bit*2) {
-      for(int j=0;j<accu_bit;j++) gf256v_add( tmp , tmp_res+TMPVEC_LEN*(i+j) , vec_len );
-    }
-    gf256v_madd( y , tmp , accu_bit ,  vec_len );
-
-#endif
 }
 
 

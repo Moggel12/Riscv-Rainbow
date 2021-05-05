@@ -38,6 +38,10 @@ int verifier()
         pk[i] = c;
     } 
 
+    for (size_t i = 0; i < CRYPTO_PUBLICKEYBYTES; i++) {
+        printf("%u ", pk[i]);
+    }
+
     mlen = get_text_len();
     unsigned char msg[mlen];
 

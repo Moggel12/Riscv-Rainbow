@@ -1,14 +1,6 @@
 #include "slice.h"
 #include <stdio.h>
 
-// Only fills first degree term and constant term
-void fill_consistent(uint32_t *term[], uint32_t filler)
-{
-    for (int i = 0; i < 4; i++) {
-        term[i] = filler;
-    }
-}
-
 void binary_print(uint32_t number)
 {
     uint32_t a[32], n = number, val = 0;
@@ -48,26 +40,24 @@ void slice(uint8_t *coefficients, int c_amount, uint32_t *sliced)
     }
 }
 
+void deslice(hl_poly res) 
+{}
+
 void sliced_compute_publicmap() 
-{
-    int i;
-
-    for (i = 0; i < 4; i++) {
-
-    }
-}
+{}
 
 hl_poly expand_variable(uint8_t val) 
 {
     uint32_t filler;
-    uint32_t high_fst[4];
-    uint32_t high_cnst[4];
-    uint32_t low_fst[4];
-    uint32_t low_cnst[4];
+    uint32_t static_arr[2];
+    uint32_t high_fst[2];
+    uint32_t high_cnst[2];
+    uint32_t low_fst[2];
+    uint32_t low_cnst[2];
 
-    uint32_t *all_vals[4] = {high_fst, high_cnst, low_fst, low_cnst};
+    uint32_t *all_vals[4] = {low_cnst, low_fst, high_cnst, high_fst};
 
-    for (int i = 0; i < 4; i++) 
+    for (uint32_t i = 0; i < 4; i++) 
     {
         if ((val & (1 << i)) > 0) 
         {
@@ -75,12 +65,14 @@ hl_poly expand_variable(uint8_t val)
         } else {
             filler = 0;
         }
-        for (int j = 0; j < 4; j++) 
+        for (int j = 0; j < 2; j++) 
         {
-            (all_vals + i)[j] = ~1
+            *(all_vals[i] + j) = filler;
         }
     }
- 
+    ll_poly high = construct_ll_poly(static_arr, high_fst, high_cnst);
+    ll_poly low = construct_ll_poly(static_arr, low_fst, low_cnst);
+    hl_poly res = construct_hl_poly(high, low);
     return res;
 }
 
@@ -88,7 +80,7 @@ ll_poly construct_ll_poly(uint32_t snd[], uint32_t fst[], uint32_t cnst[])
 {
     ll_poly res;
     int i;
-    for (i = 0; i < 4; i++) 
+    for (i = 0; i < 2; i++) 
     {
         res.snd[i] = snd[i];
         res.fst[i] = fst[i];

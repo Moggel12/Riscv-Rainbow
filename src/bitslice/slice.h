@@ -5,9 +5,9 @@
 // Represents a GF4 value as a polynomial. This should have snd = 0 to be valid.
 typedef struct 
 {
-    uint32_t snd[4];
-    uint32_t fst[4];
-    uint32_t cnst[4];
+    uint32_t snd[2];
+    uint32_t fst[2];
+    uint32_t cnst[2];
 } ll_poly;
 
 // Represents a GF16 value as a polynomial with a first degree term of ll_poly high and constant term of ll_poly low. Hence, a polynomial with polynomial coefficients

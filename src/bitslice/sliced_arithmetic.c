@@ -35,7 +35,7 @@ hl_poly gf16_prod(hl_poly f, hl_poly g)
 ll_poly gf4_nonpure_add(ll_poly f, ll_poly g) 
 {
     int i;
-    ll_poly res = {{0,0,0,0}, {0,0,0,0}, {0,0,0,0}};
+    ll_poly res = {{0,0}, {0,0}, {0,0}};
     for (i = 0; i < 4; i++) {
         res.snd[i] = f.snd[i] ^ g.snd[i];
         res.fst[i] = f.fst[i] ^ g.fst[i];
@@ -47,7 +47,7 @@ ll_poly gf4_nonpure_add(ll_poly f, ll_poly g)
 void gf4_reduce(ll_poly f) 
 {
     int i;
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < 2; i++) {
         f.fst[i] = f.snd[i] ^ f.fst[i];
         f.cnst[i] = f.snd[i] ^ f.cnst[i];
         f.snd[i] ^= f.snd[i];
@@ -58,8 +58,8 @@ void gf4_reduce(ll_poly f)
 ll_poly gf4_prod(ll_poly f, ll_poly g) 
 {
     int i;
-    ll_poly res = {{0,0,0,0}, {0,0,0,0}, {0,0,0,0}};
-    for (i = 0; i < 4; i++) {
+    ll_poly res = {{0,0}, {0,0}, {0,0}};
+    for (i = 0; i < 2; i++) {
         res.snd[i] = f.fst[i] & g.fst[i];
         res.fst[i] = (f.fst[i] & g.cnst[i]) ^ (f.cnst[i] & g.fst[i]);
         res.cnst[i] = f.cnst[i] & g.cnst[i];

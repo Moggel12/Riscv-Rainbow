@@ -35,13 +35,13 @@ void random_polysystem(hl_poly *polys) {
     int i;
  
     srand(1);
-    for (i = 0; i < 100; i++) {
-        uint32_t snd_1[4] = {0,0,0,0};
-        uint32_t fst_1[4] = {rand(),rand(),rand(),rand()};
-        uint32_t cnst_1[4] = {rand(),rand(),rand(),rand()};
-        uint32_t snd_2[4] = {0,0,0,0};
-        uint32_t fst_2[4] = {rand(),rand(),rand(),rand()};
-        uint32_t cnst_2[4] = {rand(),rand(),rand(),rand()};
+    for (i = 0; i < 64; i++) {
+        uint32_t snd_1[2] = {0,0};
+        uint32_t fst_1[2] = {rand(),rand()};
+        uint32_t cnst_1[2] = {rand(),rand()};
+        uint32_t snd_2[2] = {0,0};
+        uint32_t fst_2[2] = {rand(),rand()};
+        uint32_t cnst_2[2] = {rand(),rand()};
         ll_poly temp_h = construct_ll_poly(snd_1, fst_1, cnst_1);
         ll_poly temp_l = construct_ll_poly(snd_2, fst_2, cnst_2);
         polys[i] = construct_hl_poly(temp_h, temp_l);
@@ -51,7 +51,7 @@ void random_polysystem(hl_poly *polys) {
 
 int main(void)
 {
-    hl_poly polys[100];
+    hl_poly polys[64];
     random_polysystem(polys);
     
     // ll_poly res = gf4_prod(polys[0].high, polys[1].high);
@@ -141,10 +141,22 @@ int main(void)
     // binary_print(res.snd[2]);
     // printf(" ");
     // binary_print(res.snd[3]);
-    binary_print((uint32_t) ~0);
-    printf("\n");
+    // binary_print((uint32_t) ~0);
+    // printf("\n");
     // uint32_t sliced[4] = {0, 0, 0, 0};
     // uint8_t coefficients[3] = {7, 3, 0};
+
+    hl_poly test = expand_variable((uint32_t) 5);
+    binary_print(5);
+    printf("\n");
+    binary_print(test.high.fst[1]);
+    printf("\n");
+    binary_print(test.high.cnst[1]);
+    printf("\n");
+    binary_print(test.low.fst[1]);
+    printf("\n");
+    binary_print(test.low.cnst[1]);
+    printf("\n");
 
     // slice(coefficients, 3, sliced); 
     return 0;
