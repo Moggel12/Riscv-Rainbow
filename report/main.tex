@@ -1,10 +1,10 @@
 % Information and metadata
 % --------------------------
-
 	% When changed, these should automatically appear in the document.
 	\title{Post Quantum Cryptography on the RISC-V platform - Rainbow}% \ctitle - Document title for maketitle command
 	\author{}
 	\date{01-06-2021}								% \cdate - hand-in date
+
 	\newcommand{\ccourse}{BADM500}							% \ccouse - course code (and name)
 
 % Preamble
@@ -42,6 +42,7 @@
 			\usepackage{color}                          % Gives colour commands (Used for links)
 			\usepackage[pdftex, colorlinks]{hyperref}   % Makes hyperlinks work and coloured
 			\usepackage[paperwidth=8.5in]{geometry}     % Enlarges the width of the page by inches
+			\usepackage{cleveref}
 
 			% Drawing and diagram packages
 			\usepackage{tikz}							% Package for drawing diagrams
@@ -52,7 +53,7 @@
             \usepackage{comment}                        % Allows to comment entire paragraph
             \usepackage{tabularx}
             \usepackage[ruled,vlined]{algorithm2e}
-
+            
 
 		% END_FOLD
 
@@ -158,20 +159,53 @@
 % ==========================
 \begin{document}
 
-	\maketitle 													% Prints title, author and date
-	\begin{minipage}[t]{0.6\textwidth}
-        \begin{flushleft} \large
-            \emph{Author:}\\
-            \text{Mikkel Juul Vestergaard}
-        \end{flushleft}
-    \end{minipage}
-    \begin{minipage}[t]{0.4\textwidth}
-        \begin{flushright} \large
-            \emph{Supervisor:} \\
-            \text{Assist. professor,}\\
-            \text{Ruben Niederhagen}
-        \end{flushright}
-    \end{minipage}\\[3cm]
+% 	\maketitle 													% Prints title, author and date
+% 	\begin{minipage}[t]{0.6\textwidth}
+%         \begin{flushleft} \large
+%             \emph{Author:}\\
+%             \text{Mikkel Juul Vestergaard}
+%         \end{flushleft}
+%     \end{minipage}
+%     \begin{minipage}[t]{0.4\textwidth}
+%         \begin{flushright} \large
+%             \emph{Supervisor:} \\
+%             \text{Assist. professor,}\\
+%             \text{Ruben Niederhagen}
+%         \end{flushright}
+%     \end{minipage}\\[3cm]
+
+    \begin{titlepage}
+    \begin{center}
+        \vspace*{1cm}
+            
+        \LARGE
+        \textbf{Post Quantum Cryptography on the RISC-V platform - Rainbow}
+            
+        \vspace{2cm}
+        
+        \Large
+        \emph{Author:}\\
+        Mikkel Juul Vestergaard
+        
+        \vspace{0.5cm}
+        \emph{Supervisor:}\\
+        Assist. Professor, Ruben Niederhagen
+        \vfill
+        
+        \vspace{0.8cm}
+            
+        \includegraphics[width=0.6\textwidth]{resources/SDU.jpeg}
+            
+        \Large
+        Department of Mathematics and Computer Science\\
+        University of Southern Denmark\\
+        Denmark\\
+        01-06-2021
+            
+    \end{center}
+\end{titlepage}
+
+
     %\includegraphics[width]{resources/SDU.png}
     \thispagestyle{empty}% No header or footer on first page
     \pagenumbering{gobble} 
@@ -182,6 +216,7 @@
 
     \newpage
     \pagenumbering{arabic} 
+    \nocite{*}
     % Include new tex files here.
     % --------------------------
         \input{Abstract}
@@ -191,6 +226,10 @@
         \input{Optimizations}
         \input{Evaluation}
         \input{Conclusion}
-        \input{References}
+        \phantomsection
+        \addcontentsline{toc}{section}{References}
+        \bibliographystyle{plain}
+        \bibliography{bibliography}
+        
 \end{document}
 
