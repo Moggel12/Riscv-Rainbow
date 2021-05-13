@@ -13,3 +13,4 @@ test/KAT_*
 env
 __pycache__/*
 test/__pycache__
+*.bbl
