@@ -1,5 +1,53 @@
 \section{Optimizations} \label{opti}
-\subsection{Lookup tables}
-\subsection{Bitslicing}
-\subsubsection{Design of a Bitsliced System for GF(16)}
-\subsubsection{Implementation of the Bitsliced Scheme}
+For this project multiple approaches were tested for running Rainbow on a constrained-computing platform such as those typically seen in embedded devices. Section \ref{opt:gf16comp} goes into detail on how elements of GF16 are treated for the optimizations of this project. It also specifies the notation used in \cref{opt:lookup} and \cref{opt:bitslice}. The latter two sections each show how the theoretical aspect of the optimization works as well as showing how it was implemented.
+\subsection{GF(16) Computation} \label{opt:gf16comp}
+For the subsequent sections after this the notation assumes a bit of knowledge on how a $GF(16)$ element can be treated. Any element in $GF(16)$ can be represented as a \emph{polynomial of polynomials}. What is meant by this is that any element in $GF(16)$ can take the form
+$$
+    \alpha a + \beta
+$$
+where $\alpha$ and $\beta$ both are of the form 
+$$
+    \gamma b + \delta
+$$
+such that the \emph{outermost} polynomial is linear over variable $a$ and the two \emph{innermost} are linear over the variable $b$. This is the same as expressing a $GF(16)$ element as a first-degree polynomial with first degree polynomials as coefficients.\medskip\\
+One way of approaching such a representation for $GF(16)$ is then to have the coefficients of the \emph{outermost} polynomial be $GF(4)$ elements, which themselves are represented as the first degree polynomials over the variable $b$. The coefficients of the \emph{innermost} polynomial would then be $GF(2)$ elements, holding exactly a binary value.\medskip\\
+By the above constructions it is then clear that a $GF(16)$ value can be represented using two, layered, polynomials where the innermost has binary coefficients. An example of such a $GF(16)$ coefficient could be
+$$
+    (1b + 0) a + (1b + 1) = (1b)a + (1b + 1)
+$$
+Further, for the following subsections I expand upon this by writing such a polynomial either as the bitstring (using the above element as reference)
+$$
+    1011
+$$
+or using square brackets to denote the coefficients of the innermost polynomial
+$$
+    [10]a + [11]
+$$
+\subsection{Lookup tables} \label{opt:lookup}
+For a system over $GF(16)$ coefficients, the elements might take one of 16 different values. Throughout the publicmap computation, multiplication over such $GF(16)$ values are done quite a few times. Though, most modern architectures, and especially the \texttt{RISC-V} architecture, have not been built to support arithmetic over such finite fields. For this reason, to test whether or not the bit-manipulation approach in the reference code is a bottleneck, I used a basic lookuptable approach to compute the multiplication result of two values in $GF(16)$.\medskip\\
+Computing the $16 \times 16$ table of $GF(16)$ elements was done using the original multiplication code and running it for each combination of $GF(16)$ values that exist. 
+The table looks as \cref{lookuptable} and lies in the \texttt{gf16.h} file, in the function \texttt{gf16\_mul()}.
+\begin{figure}[h]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|c|}
+        \hline
+            \textbf{Polynomials} & \textbf{0000} & \textbf{0001} & \textbf{0010} & \textbf{0011} & \dots & \textbf{1111} \\
+        \hline
+            \textbf{0000} & 0000 & 0000 & 0000 & 0000 & \dots & 0000\\
+        \hline
+            \textbf{0001} & 0000 & 0001 & 0010 & 0011 & \dots & 1111\\
+        \hline
+            \vdots & \vdots & \vdots & \vdots & \vdots & $\ddots$ & \vdots\\
+        \hline
+            \textbf{1111} & 0000 & 1111 & 0101 & 1010 & \dots & 1001\\
+        \hline
+    \end{tabular}
+    \caption{A brief view at some of the lookuptable elements}
+    \label{lookuptable}
+\end{figure}\\
+Since each $GF(16)$ can be stored in one \texttt{uint8\_t} each, it is possible to have at most 256 (plus, potentially some overhead bytes) bytes of space used for a table like above. Given a constrained system like this, a space-speed tradeoff have to be considered thoroughly. This tradeoff will be evaluated further in \cref{evalsec}.\medskip\\
+The specific implementation uses two $GF(16)$ elements, $a$ and $b$, as input and indexes the table using $a*16 + b$, as both $a$ and $b$ are promised to maximally use four bits of memory. This, of course, needs some external checks on the amount of bits used in $a$ and $b$ to be fully secure, though it was not seen as a major insecurity on the system to be addressed immediately.\medskip\\
+Should it be a problem using \texttt{256} bytes of memory, some memory can be saved by not computing multiplications where one polynomial is of value $0$ but just returning a $0$ byte to the caller. The tradeoff here is then that the indexing of the table might become a bit more intricate than it is now plus an additional check is done before any actual lookup is done.
+\subsection{Bitslicing} \label{opt:bitslice}
+\subsubsection{Design of a Bitsliced System for GF(16)} \label{bitslice:theory}
+\subsubsection{Implementation of the Bitsliced Scheme} \label{bitslice:implementation}

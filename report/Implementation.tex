@@ -34,10 +34,60 @@ The second file is the \texttt{sign.c} file consisting of \texttt{crypto\_sign()
 \medskip\\
 The last file is also a pair of header and \texttt{c}-file. These are the \texttt{rng.c} and \texttt{rng.h} files. These files consist of definitions and declarations for \texttt{randombytes()}, \texttt{randombytes\_init()}, \texttt{seedexpander()}, \texttt{seedexpander\_init()} and \texttt{struct AES\_XOF\_struct}. The only thing reworked for this was the AES implementation used for the seed expansion function, else this was neither touched.
 \subsubsection{Key Generation}
-An overview of the pseudo-code behind the key generation scheme can be seen in \cite{nistapi}. 
+The reference key generation of the Rainbow scheme follows \cref{rainbowkeygen}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{resources/rainbowkeygen.png}
+    \caption{Pseudo code for the Rainbow key generation scheme}
+    \label{rainbowkeygen}
+\end{figure}
+As this sections has focus on the actual \texttt{c}-implementation of the reference Rainbow scheme, I will bridge the gap between this figure and what is found in the \texttt{Ia\_Classic\_Reference} folder.\medskip\\
+Looking at \cref{rainbowkeygen} and making a coupling to \cref{rainscheme} one might clearly see the initialization of important aspects of the key, such as the affine invertible maps $S$ and $T$ generated as $M_S$ and $M_T$ respectively. This initialization is done in lines 3-14 in \cref{rainbowkeygen} whilst 15 and onward is generation of the central map and at last the generation of the public and secret keys $pk$ and $sk$. The highest-level abstraction of this procedure lies in the \texttt{rainbow\_keypair.c} in \texttt{generate\_keypair()}. This functions is called from the \texttt{NIST}-specified \texttt{crypto\_sign\_keypair()} in \texttt{sign.c}. In \texttt{crypt\_sign\_keypair()} itself, before calling for the generation of a public-secret keypair, the \texttt{NIST} \texttt{randombytes()} function is called aswell ensuring that a securely generated seed of bytes is obtained. Once the keys have been generated, the memory of the seed is nullified.\medskip\\
+Using the seed provided from the \texttt{randombytes()} function, \texttt{generate\_keypair()} then first calls \texttt{\_generate\_secretkey} which computes the $S$ and $T$ maps and returns. Once this has been done, the function goes on to compute the public key from the secret key just generated. This generation is first done by computing a temporary structure, namely \texttt{ext\_cpk\_t}, for the public key by computing the matrix $Q$ from the central map $F$. The matrix $Q$ can be seen in section 4.1 of \cite{rainbownist}. As was also stated in \cref{rainscheme} the public key is the composition of three maps such that the central map is obfuscated using $S$ and $T$. This obfuscations is primarily done by calling the \texttt{obfuscate\_l1\_polys()} function using various parts of the public key polynomials and secret key polynomials.\textbf{COMPUTE B1 AND B2?}\medskip\\
+The format of the generated public key is then a Macaulay matrix in column-major form and which has the monomials ordered in lexicographic order. Every two coefficients are then packed into a single byte yielding no bit-waste for each coefficient \cite{rainbownist}. In an abstracted form, the public key is
+$$
+    [q_{1,1,1}, q_{1,1,2}, \dots,q_{1,1,m},q_{1,2,1} \dots , q_{1,n,m}, q_{2,2,1}, \dots q_{n,n,m}]
+$$
+where $q_{i,j,k}$ is the coefficient of monomial $x_ix_j$ in polynomial $p_k$.\medskip\\
+As the nature of the private key requires a little more structure to index it by the different maps, it is stored with each map separately though in the order $S^{-1}$, $F$ and $T^{-1}$. In addition to the fact that the inverses of $S$ and $T$ are stored, $F$ is also deconstructed such that the two layers it is made up of are stored separately \cite{rainbownist}. The exact format of $S$ and $T$ can be seen in \cite{rainbownist}.
 \subsubsection{Message Signing}
-
+To sign a document with Rainbow, the scheme uses the inverted maps of $S$ and $T$ while computing a pre-image of some $\textbf{y} \in F$. The computations seen in \cref{rainbowsign} start, at a high abstractional layer, in the \texttt{NIST}-specified \texttt{crypto\_sign()} function in \texttt{sign.c}.\medskip\\
+Before any computation involving aspects of the private key a message digest is created, using SHA256, of the input document/message. The hashing functionality used here is the one specified in \cref{utils} provided by \texttt{utils\_hash.c} wrapper file. Lines 2-4 in \cref{rainbowsign} is then computed using the \texttt{rainbow\_sign()} function provided by the \texttt{rainbow.c} file.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{resources/rainbowsign.png}
+    \caption{Pseudo code for the Rainbow signature scheme}
+    \label{rainbowsign}
+\end{figure}\\
+Due to the layered nature of the Rainbow scheme, the first part of \texttt{rainbow\_sign()} is used to randomly generate variables (called \emph{vinegar} variables), the linear equations of the first layer (using the \emph{vinegar} variables) while also pre-computing variables for the second \emph{rainbow layer}. Once this setup has been computed, the scheme is ready to compute line 2 in \cref{rainbowsign}.\medskip\\
+As the scheme has to find a \emph{suitable} pre-image $\textbf{y} \in F$, it is not impossible to obtain a pre-image $\textbf{y}$ that is not suitable for further computation and by that has to be reran. This is implemented as a \texttt{while}-loop running the computations of lines 2 and 3 until a point is reached where the result $\textbf{y}$ is \emph{suitable}. Such a $\textbf{y}$ would be one that allows for the system of linear equations constructed by using the randomly generated \emph{vinegar} variables in the polynomials of $F$. Once the aforementioned system of linear equations is solvable $\textbf{y}$ is a suitable pre-image. The procedure can be seen in \cref{rainbowinvf}. Having computed lines 1-3 in \cref{rainbowsign}, the remaining part of the procedure is to use the pre-image $\textbf{y}$ to compute the signature $\textbf{z}$ and return that.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{resources/rainbowinvf.png}
+    \caption{Pseudo code inverting the central map $F$}
+    \label{rainbowinvf}
+\end{figure}
+To end off, the function \texttt{rainbow\_sign()} cleans the memory by nullifying all contents of the addresses used for the procedure.
 \subsubsection{Signature Verification}
+As the procedure in \cref{rainbowsign} uses pre-images and inverted maps to compute $\textbf{z}$, the verification procedure is quite simple. Provided a signature it can be verified by hashing the document/message in use, using the same hashing function as the signer did, and computing the publicmap on the given signature to then check if the values of both are the same. Figure \ref{rainbowveri} shows the pseudo code if this procedure. The procedure is, once more, ran from a \texttt{NIST}-specified function, though, this time called \texttt{crypto\_sign\_open()}. 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{resources/rainbowver.png}
+    \caption{Pseudo code for the Rainbow verification scheme}
+    \label{rainbowveri}
+\end{figure}\\
+For the sake of satisfactory computation, the same SHA scheme, namely SHA256, is used to compute the hash of the document $d$. Once more, the wrapper in \texttt{utils\_hash.c} is used to wrap the \texttt{RISCV-Crypto} implementation mentioned in \cref{utils}. To compute the publicmap on $\textbf{z}$, line 2 in \cref{rainbowveri}, the procedure calls \texttt{rainbow\_verify()} in \texttt{rainbow.c} to handle the remainder of the scheme.\medskip\\
+The \texttt{rainbow\_verify()} function has two functionalities
+\begin{enumerate}
+    \item computing the publicmap using \texttt{rainbow\_publicmap()} in\\ \texttt{rainbow\_publicmap.c}, and
+    \item verifying the computed publicmap against the hashed document value.
+\end{enumerate}
+The public map computation in \texttt{rainbow\_publicmap()} is much as one would expect for computing an output vector from a system of equations and some input the variables.\medskip\\
+The actual verification is then done in \texttt{\_rainbow\_verify()} using the message digest computed by the \texttt{rainbow\_publicmap} procedure. The idea for verification checking is to check a locally hashed version of the document against the digest computed just prior. The check is a simple bit-wise \texttt{xor} for each \texttt{uint8\_t} (or just each byte) that resides in both hashes. For each byte value, the result of the bit-wise \texttt{xor} is then \texttt{or}'ed such that if the final value is larger than 0, the hashes are different and the verification returns a verification failure.
+
+\subsubsection{Finite Field Arithmetic}
+The mathematical aspect of the Rainbow scheme is quite large, as the core of the scheme is based on pure math. \textbf{NOT DONE}
+
 \subsection{Testing Environment}
 As all aforementioned functionality was implemented and ran on a simulated device that does not interact with the host machine operating system in the same way that a typical program would, the testing facilities also had to be a little different. It therefore seems reasonable to shortly discuss how all aforementioned functionality was tested, as any errors in testing usually is quite a bad sign later in the pipeline. The primary file used for testing is the \texttt{kat.py} file in the \texttt{test/} directory.\medskip\\
 First of all, to be able to test the scheme the host device and the client device had to be able to communicate. Usually this can be done via some sort of serial port on an actual device, though as this was a virtual device a serial port was not present. The author(s) of the \texttt{pqriscv} project ensured there to be a runtime option that allows for the client device to have a communications port through a linux \texttt{pts} device.\medskip\\

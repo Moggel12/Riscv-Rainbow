@@ -6,6 +6,7 @@ import secrets
 import subprocess
 import ast
 import os
+from datetime import datetime
 from string import ascii_letters, punctuation, digits
 from random import choice, randint
 from time import time
@@ -170,6 +171,10 @@ def get_kat_file(kat_id, f, f_type):
     with open(f"KAT_{kat_id}/{f}", f_type) as msg_f:
         content = msg_f.read()
     return content
+
+def write_bench_file(kat_id, time):
+    with open(f"bench_{time()}_{input("Lookuptable, bitsliced or standard?")}") as bench_file:
+        bench_file.write("Time: " + time)
 
 def get_keys(pk, sk):
     keys = None

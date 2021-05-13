@@ -1,4 +1,5 @@
-\section{Evaluation}
+\section{Evaluation} \label{evalsec}
+Optimizing code to use special techniques does not ensure that the final code will run faster than the original code. For this reason, the following section will look into what is gained and what is lost by each optimization type. The primary evaluation will be on CPU cycles, as the timed benchmarks done might not be fully correct, due to overhead between the communicating parties (especially the possible overhead of the extra computation done by the test environment). Asking for cycles used on the \texttt{PQ-VexRiscV} CPU is easily done using the included \texttt{hal} setup. \textbf{how much can we talk about the hal?}
 \subsection{Performance of the Reference Implementation}
 \subsection{Performance of the Lookup Table Implementation}
 \subsection{Performance of the Bitsliced Implementation}
