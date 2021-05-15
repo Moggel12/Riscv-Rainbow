@@ -22,11 +22,11 @@ void binary_print(uint32_t num);
 // Compute a system of multivariate polynomials over GF16 (bitsliced)
 void sliced_compute();
 
-// Slice GF16 coefficients into
-void slice(uint8_t *coefficients, int c_amount, uint32_t *sliced);
+// Slices a column of the coefficients in the Macaulay matrix
+hl_poly slice_column(uint8_t coefficients[]);
 
 // Reconstruct uint8_t values from sliced result
-void deslice(hl_poly res);
+void deslice(hl_poly res, uint8_t coefficients[]);
 
 // Product of two GF16 values
 hl_poly gf16_prod(hl_poly f, hl_poly g);

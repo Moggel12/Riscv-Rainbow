@@ -16,35 +16,78 @@ void binary_print(uint32_t number)
     }
 }
 
-void slice(uint8_t *coefficients, int c_amount, uint32_t *sliced) 
+void slice_32(uint8_t *coefficients, uint32_t sliced[]) 
 {
-    int s;
     uint32_t expanded, bit;
-
-    if (c_amount > 32) 
-    {
-        c_amount = 32; // Ensure that we only get as many bits as we can fit
-    }
 
     for (int i = 0; i < 4; i++) 
     {
-        for (int j = 0; j < c_amount; j++) 
+        for (int j = 31; j >= 0; j--) 
         {
-            expanded = (uint32_t) coefficients[j];
+            expanded = (uint32_t) coefficients[31 - j];
             bit = (((expanded >> i)) & ((uint32_t) 1)) << j;
             sliced[i] = sliced[i] | bit;
-            /*printf("%d: %032u\n%d: %032u = %032u\n", j, binary_conversion((expanded >> i)), j, binary_conversion(1), binary_conversion(bit << j));*/
         }
-        /*printf("R%d = %032u\n", i, binary_conversion(sliced[i]));*/
-        /*printf("\n");*/
     }
 }
 
-void deslice(hl_poly res) 
-{}
+hl_poly slice_column(uint8_t coefficients[]) 
+{
+    uint32_t sliced_upper32[4] = {0, 0, 0, 0};
+    uint32_t sliced_lower32[4] = {0, 0, 0, 0};
+
+    slice_32(coefficients, sliced_upper32); 
+
+    slice_32(coefficients + 32, sliced_lower32);
+
+    uint32_t zeros[4] = {0, 0, 0, 0};
+    uint32_t high_fst[2] = {sliced_upper32[3], sliced_lower32[3]};
+    uint32_t high_cnst[2] = {sliced_upper32[2], sliced_lower32[2]};
+    uint32_t low_fst[2] = {sliced_upper32[1], sliced_lower32[1]};
+    uint32_t low_cnst[2] = {sliced_upper32[0], sliced_lower32[0]};
+
+    return construct_hl_poly(construct_ll_poly(zeros, high_fst, high_cnst), construct_ll_poly(zeros, low_fst, low_cnst));
+}
+
+void deslice(hl_poly res, uint8_t coefficients[]) 
+{
+    uint8_t idx = 0;
+    for (int i = 63; i >= 0; i--)
+    {
+        uint32_t mask = (1 << (i%32));
+        if (i < 32) 
+            idx = 1;
+        coefficients[63 - i] = 0;
+        uint8_t b3 = 0;
+        if ((res.high.fst[idx] & mask) > 0)
+            b3 = 8;
+        uint8_t b2 = 0;
+        if ((res.high.cnst[idx] & mask) > 0)
+            b2 = 4;
+        uint8_t b1 = 0;
+        if ((res.low.fst[idx] & mask) > 0)
+            b1 = 2;
+        uint8_t b0 = 0;
+        if ((res.low.cnst[idx] & mask) > 0)
+            b0 = 1;
+        coefficients[63 - i] = coefficients[63 - i] ^ (b3 ^ (b2 ^ (b1 ^ b0)));
+    }
+}
 
 void sliced_compute_publicmap() 
-{}
+{
+    /*
+     * PSEUDO-CODE FOR PROCEDURE:
+     * Initialize hl_poly *total* with zero values
+     * Initialize a coefficient array *coeff* of size 64
+     * For i = 1 to pk_size/64
+     *     Compute the hl_poly *current* for column i
+     *     Expand z[i] to a hl_poly
+     *     gf16_prod(current, z[i])
+     *     total = gf16_add(current, total)
+     * deslice(total, coeff)
+     */
+}
 
 hl_poly expand_variable(uint8_t val) 
 {

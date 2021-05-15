@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include "slice.h"
 #include <stdlib.h>
+#include <stdbool.h> 
+#include <time.h>
+
 
 void print_poly(hl_poly f) {
     printf("High-level:\n");
@@ -46,6 +49,17 @@ void random_polysystem(hl_poly *polys) {
         ll_poly temp_l = construct_ll_poly(snd_2, fst_2, cnst_2);
         polys[i] = construct_hl_poly(temp_h, temp_l);
         // print_poly(polys[i]);
+    }
+}
+
+void random_arr(uint8_t arr[]) 
+{
+    time_t t;
+    srand((unsigned) time(&t));
+    for (int i = 0; i < 64; i++) 
+    {
+        arr[i] = (uint8_t) rand();
+        arr[i] = arr[i] & 15;
     }
 }
 
@@ -146,18 +160,52 @@ int main(void)
     // uint32_t sliced[4] = {0, 0, 0, 0};
     // uint8_t coefficients[3] = {7, 3, 0};
 
-    hl_poly test = expand_variable((uint32_t) 5);
-    binary_print(5);
-    printf("\n");
-    binary_print(test.high.fst[1]);
-    printf("\n");
-    binary_print(test.high.cnst[1]);
-    printf("\n");
-    binary_print(test.low.fst[1]);
-    printf("\n");
-    binary_print(test.low.cnst[1]);
-    printf("\n");
+    // hl_poly test = expand_variable((uint32_t) 5);
+    // binary_print(5);
+    // printf("\n");
+    // binary_print(test.high.fst[1]);
+    // printf("\n");
+    // binary_print(test.high.cnst[1]);
+    // printf("\n");
+    // binary_print(test.low.fst[1]);
+    // printf("\n");
+    // binary_print(test.low.cnst[1]);
+    // printf("\n");
 
-    // slice(coefficients, 3, sliced); 
+    // uint8_t coefficients[64] = {7, 3, 1, 7, 3, 1, 7, 3, 1, 7, 3, 1, 7, 3, 1, 7, 3, 1, 7, 3, 1, 7, 3, 1, 7, 3, 1, 7, 3, 1, 7, 3, 2, 4, 8, 2, 4, 8, 2, 4, 8, 2, 4, 8, 2, 4, 8, 2, 4, 8, 2, 4, 8, 2, 4, 8, 2, 4, 8, 2, 4, 8, 2, 4};
+    // uint8_t coefficients[64];
+    // random_arr(coefficients);
+
+    // hl_poly current = slice_column(coefficients);
+
+    // uint8_t coeff[64];
+
+    // deslice(current, coeff);
+
+    // for (int i = 0; i < 64; i++) 
+    // {
+    //     printf("%u ", coefficients[i]);
+    // }
+    // printf("\n");
+    // for (int i = 0; i < 64; i++)
+    // {
+    //     printf("%u ", coeff[i]);
+    // }
+    // printf("\n");
+    // bool test = true;
+
+    // for (int i = 0; i < 64; i++) {
+    //     test = test && (coefficients[i] == coeff[i]);
+    // }
+    
+    // if (test) {
+    //     printf("True");
+    // } else {
+    //     printf("False");
+    // }
+
+
+
+    // printf("\n");
     return 0;
 }
