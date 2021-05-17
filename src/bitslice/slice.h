@@ -1,4 +1,4 @@
-// The following functions all assume Rainbow level I (GF16, 100 polynomials)
+// The following functions all assume Rainbow level I (GF16, 64 polynomials)
 
 #include <stdint.h>
 
@@ -17,7 +17,17 @@ typedef struct
     ll_poly low;
 } hl_poly;
 
+/////////////////////////TEMPORARY///////////////////////////////
+
+#define CRYPTO_PUBLICKEYBYTES 161600
+
 void binary_print(uint32_t num);
+
+uint8_t gf16v_get_ele(const uint8_t *a, unsigned i);
+
+void slice_32(uint8_t *coefficients, uint32_t sliced[]);
+
+/////////////////////////////////////////////////////////////////
 
 // Compute a system of multivariate polynomials over GF16 (bitsliced)
 void sliced_compute();
@@ -31,10 +41,13 @@ void deslice(hl_poly res, uint8_t coefficients[]);
 // Product of two GF16 values
 hl_poly gf16_prod(hl_poly f, hl_poly g);
 
+// Sum of two GF16 values
+hl_poly gf16_add(hl_poly f, hl_poly g);
+
 // Product of two GF4 values
 ll_poly gf4_prod(ll_poly f, ll_poly g);
 
-// Adding two GF4 values
+// Sum two GF4 values
 ll_poly gf4_nonpure_add(ll_poly f, ll_poly g);
 
 // Expand a value to an hl_poly.
@@ -43,8 +56,8 @@ hl_poly expand_variable(uint8_t val);
 // Reduce a "nonpure" GF4 value to be "pure"
 void gf4_reduce(ll_poly f);
 
-// Construct a low-level polynomial (coefficient of the coefficients)
+// Construct a low-level polynomial (coefficient of the coefficients) (GF4 value, potentially "nonpure" in the sense of Tower-field representation)
 ll_poly construct_ll_poly(uint32_t snd[], uint32_t fst[], uint32_t cnst[]);
 
-// Construct a high-level polynomial (a coefficient of the multivariate polynomials)  
+// Construct a high-level polynomial (a coefficient of the multivariate polynomials) (GF16 value)
 hl_poly construct_hl_poly(ll_poly h, ll_poly l);

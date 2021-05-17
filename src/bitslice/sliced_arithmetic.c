@@ -28,15 +28,22 @@ hl_poly gf16_prod(hl_poly f, hl_poly g)
 
     hl_poly res = {t1, t0};
     return res;
+}
 
+hl_poly gf16_add(hl_poly f, hl_poly g) 
+{
+    hl_poly res;
+    res.high = gf4_nonpure_add(f.high, g.high);
+    res.low = gf4_nonpure_add(f.low, g.low);
+    return res;
 }
 
 // Add two gf4 values, represented as polynomials. These may not be "pure" GF4 values.
 ll_poly gf4_nonpure_add(ll_poly f, ll_poly g) 
 {
-    int i;
     ll_poly res = {{0,0}, {0,0}, {0,0}};
-    for (i = 0; i < 4; i++) {
+    for (int i = 0; i < 2; i++) 
+    {
         res.snd[i] = f.snd[i] ^ g.snd[i];
         res.fst[i] = f.fst[i] ^ g.fst[i];
         res.cnst[i] = f.cnst[i] ^ g.cnst[i];
@@ -46,8 +53,8 @@ ll_poly gf4_nonpure_add(ll_poly f, ll_poly g)
 
 void gf4_reduce(ll_poly f) 
 {
-    int i;
-    for (i = 0; i < 2; i++) {
+    for (int i = 0; i < 2; i++) 
+    {
         f.fst[i] = f.snd[i] ^ f.fst[i];
         f.cnst[i] = f.snd[i] ^ f.cnst[i];
         f.snd[i] ^= f.snd[i];
@@ -57,9 +64,9 @@ void gf4_reduce(ll_poly f)
 // Product of two gf4 values, represented as polynomials. Expects ll_poly.snd = {0,0,0,0} and returns a "nonpure" GF4 value
 ll_poly gf4_prod(ll_poly f, ll_poly g) 
 {
-    int i;
     ll_poly res = {{0,0}, {0,0}, {0,0}};
-    for (i = 0; i < 2; i++) {
+    for (int i = 0; i < 2; i++) 
+    {
         res.snd[i] = f.fst[i] & g.fst[i];
         res.fst[i] = (f.fst[i] & g.cnst[i]) ^ (f.cnst[i] & g.fst[i]);
         res.cnst[i] = f.cnst[i] & g.cnst[i];

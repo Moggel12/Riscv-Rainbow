@@ -16,10 +16,6 @@
 #include <sendfn.h>
 
 #include <rng.h>
-// the macro _SUPERCOP_ might be defined in rng.h
-#if defined(_SUPERCOP_)
-#include "crypto_sign.h"
-#endif
 
 int
 crypto_sign_keypair(unsigned char *pk, unsigned char *sk)

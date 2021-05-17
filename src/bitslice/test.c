@@ -8,30 +8,28 @@
 void print_poly(hl_poly f) {
     printf("High-level:\n");
     binary_print(f.high.snd[0]); 
-    binary_print(f.high.snd[1]); 
-    binary_print(f.high.snd[2]);
-    binary_print(f.high.snd[3]);
+    printf(" ");
     binary_print(f.high.fst[0]); 
+    printf(" "); 
+    binary_print(f.high.cnst[0]);
+    printf("\n"); 
+    binary_print(f.high.snd[1]);
+    printf(" ");
     binary_print(f.high.fst[1]); 
-    binary_print(f.high.fst[2]); 
-    binary_print(f.high.fst[3]);
-    binary_print(f.high.cnst[0]); 
+    printf(" ");
     binary_print(f.high.cnst[1]);
-    binary_print(f.high.cnst[2]); 
-    binary_print(f.high.cnst[3]);
-    printf("Low-level:\n");
-    binary_print(f.low.snd[0]);
+    printf("\nLow-level:\n");
+    binary_print(f.low.snd[0]); 
+    printf(" ");
+    binary_print(f.low.fst[0]); 
+    printf(" ");
+    binary_print(f.low.cnst[0]); 
+    printf("\n");
     binary_print(f.low.snd[1]);
-    binary_print(f.low.snd[2]);
-    binary_print(f.low.snd[3]);
-    binary_print(f.low.fst[0]);
-    binary_print(f.low.fst[1]);
-    binary_print(f.low.fst[2]);
-    binary_print(f.low.fst[3]);
-    binary_print(f.low.cnst[0]);
+    printf(" ");
+    binary_print(f.low.fst[1]); 
+    printf(" ");
     binary_print(f.low.cnst[1]);
-    binary_print(f.low.cnst[2]);
-    binary_print(f.low.cnst[3]);
 }
 
 void random_polysystem(hl_poly *polys) {
@@ -56,10 +54,9 @@ void random_arr(uint8_t arr[])
 {
     time_t t;
     srand((unsigned) time(&t));
-    for (int i = 0; i < 64; i++) 
+    for (int i = 0; i < 32; i++) 
     {
         arr[i] = (uint8_t) rand();
-        arr[i] = arr[i] & 15;
     }
 }
 
@@ -172,10 +169,63 @@ int main(void)
     // binary_print(test.low.cnst[1]);
     // printf("\n");
 
-    // uint8_t coefficients[64] = {7, 3, 1, 7, 3, 1, 7, 3, 1, 7, 3, 1, 7, 3, 1, 7, 3, 1, 7, 3, 1, 7, 3, 1, 7, 3, 1, 7, 3, 1, 7, 3, 2, 4, 8, 2, 4, 8, 2, 4, 8, 2, 4, 8, 2, 4, 8, 2, 4, 8, 2, 4, 8, 2, 4, 8, 2, 4, 8, 2, 4, 8, 2, 4};
-    // uint8_t coefficients[64];
-    // random_arr(coefficients);
 
+
+
+    // uint8_t coefficients[32];
+    // random_arr(coefficients);
+    // // uint8_t coefficients[64];
+    // // random_arr(coefficients);
+    // uint32_t sliced[4] = {0,0,0,0};
+
+    // printf("\n");
+
+    // hl_poly current = slice_column(coefficients);
+
+    // uint8_t coeff[64];
+
+    // deslice(current, coeff);
+
+    // // for (int i = 0; i < 32; i++) 
+    // // {
+
+    // printf("pre\tpost\n");
+    // for (int i = 0; i < 32; i++) 
+    // {
+    //     printf("%u\t", coefficients[i]);
+    //     printf("%u ", (coeff[i*2+1] << 4) ^ coeff[i*2]);
+    //     printf("\n");
+    // }
+
+
+    hl_poly zero = expand_variable(0);
+
+    print_poly(zero);
+
+
+
+    // printf("First element\n");
+    // binary_print(coefficients[0]);
+    // printf("\n");
+        
+    // // for (int i = 0; i < 64; i++)
+    // // {
+    // binary_print(coeff[0]);
+    // printf(" ");
+    // binary_print(coeff[1]);
+    // printf("\n");
+
+    // printf("Second element\n");
+    // binary_print(coefficients[1]);
+    
+    // printf("\n");
+    // binary_print(coeff[2]);
+    // printf(" ");
+    // binary_print(coeff[3]);
+    // // }
+    // printf("\n");
+
+    // print_poly(current);
     // hl_poly current = slice_column(coefficients);
 
     // uint8_t coeff[64];
@@ -203,8 +253,6 @@ int main(void)
     // } else {
     //     printf("False");
     // }
-
-
 
     // printf("\n");
     return 0;

@@ -51,25 +51,6 @@ void accu_eval_quad( unsigned char * accu_res , const unsigned char * trimat , c
 }
 
 
-
-static
-void accu_eval_quad_rect( unsigned char * accu_res , const unsigned char * y , unsigned num_y , const unsigned char * mat , const unsigned char * x , unsigned num_x , unsigned vec_len )
-{
-   unsigned char _xy[_MAX_N];
-
-   for(unsigned i=0;i<num_y;i++) {
-      for(unsigned j=0;j<num_x;j++) _xy[j]=x[j];
-      gfv_mul_scalar( _xy , y[i] , num_x );
-      for(unsigned j=0;j<num_x;j++) {
-         unsigned idx = _xy[j];
-         if(idx) gf256v_add( accu_res + TMPVEC_LEN*idx , mat , vec_len );
-         mat += vec_len;
-      }
-   }
-}
-
-
-
 static
 void madd_reduce( unsigned char * y , const unsigned char * tmp_res , unsigned vec_len )
 {
@@ -106,9 +87,6 @@ void madd_reduce( unsigned char * y , const unsigned char * tmp_res , unsigned v
 
 
 
-
-
-
 void rainbow_publicmap( unsigned char * y, const unsigned char * trimat, const unsigned char * x )
 {
     unsigned char tmp[TMPVEC_LEN*_GFSIZE] = {0};
@@ -118,76 +96,4 @@ void rainbow_publicmap( unsigned char * y, const unsigned char * trimat, const u
     accu_eval_quad( tmp , trimat , _x , _PUB_N , _PUB_M_BYTE );
     madd_reduce( y , tmp , _PUB_M_BYTE );
 }
-
-
-
-
-#include "utils_prng.h"
-
-
-
-void rainbow_publicmap_cpk( unsigned char * z, const cpk_t * pk, const unsigned char *w )
-{
-    prng_t prng0;
-    prng_set( &prng0 , pk->pk_seed , LEN_PKSEED );
-
-    // assuming:
-    // 1) _O2_BYTE*(_V1*_O2) is the largest size among l1_O1, l1_Q2, ..... l2_Q1, .... l2_Q9.
-    // 2) 128 >= _O1_BYTE + _O2_BYTE
-
-#define _BUF_SIZE_1 (((_V1+1)>_O2*2)? _O2_BYTE*(N_TRIANGLE_TERMS(_V1)): _O2_BYTE*_V1*_O2)
-#if ( _O2<_O1)||(128<_O1_BYTE+_O2_BYTE)
-error: buffer size.
-#endif
-    unsigned char buffer[_BUF_SIZE_1 ];
-    sk_t * _sk;
-
-    unsigned char tmp[TMPVEC_LEN*_GFSIZE] = {0};
-    unsigned char _x[_MAX_N];
-    unsigned char *_v1 = _x;
-    unsigned char *_o1 = _v1 + _V1;
-    unsigned char *_o2 = _o1 + _O1;
-    for(unsigned i=0;i<_PUB_N;i++) _x[i] = gfv_get_ele( w , i );
-
-    prng_gen( &prng0 , buffer , sizeof(_sk->l1_F1) ); // l1_F1
-    accu_eval_quad( tmp , buffer , _v1 , _V1 , _O1_BYTE );
-
-    prng_gen( &prng0 , buffer ,  sizeof(_sk->l1_F2) );  // l1_F2
-    accu_eval_quad_rect( tmp , _v1 , _V1 , buffer , _o1 , _O1 , _O1_BYTE );
-
-    accu_eval_quad_rect( tmp , _v1 , _V1 , pk->l1_Q3 , _o2 , _O2 , _O1_BYTE );
-
-    accu_eval_quad( tmp , pk->l1_Q5 , _o1 , _O1 , _O1_BYTE );
-
-    accu_eval_quad_rect( tmp , _o1 , _O1 , pk->l1_Q6 , _o2 , _O2 , _O1_BYTE );
-
-    accu_eval_quad( tmp , pk->l1_Q9 , _o2 , _O2 , _O1_BYTE );
-
-    // l2
-    unsigned char tmp2[TMPVEC_LEN*_GFSIZE] = {0};
-
-    prng_gen( &prng0 , buffer ,  sizeof(_sk->l2_F1) ); // l2_F1
-    accu_eval_quad( tmp2 , buffer , _v1 , _V1 , _O2_BYTE );
-
-    prng_gen( &prng0 , buffer ,  sizeof(_sk->l2_F2) ); // l2_F2
-    accu_eval_quad_rect( tmp2 , _v1 , _V1 , buffer , _o1 , _O1 , _O2_BYTE );
-
-    prng_gen( &prng0 , buffer ,  sizeof(_sk->l2_F3) ); // l2_F3
-    accu_eval_quad_rect( tmp2 , _v1 , _V1 , buffer , _o2 , _O2 , _O2_BYTE );
-
-    prng_gen( &prng0 , buffer ,  sizeof(_sk->l2_F5) ); // l2_F5
-    accu_eval_quad( tmp2 , buffer , _o1 , _O1 , _O2_BYTE );
-
-    prng_gen( &prng0 , buffer ,  sizeof(_sk->l2_F6) ); // l2_F6
-    accu_eval_quad_rect( tmp2 , _o1 , _O1 , buffer , _o2 , _O2 , _O2_BYTE );
-
-    accu_eval_quad( tmp2 , pk->l2_Q9 , _o2 , _O2 , _O2_BYTE );
-
-    for(int i=0;i<_GFSIZE;i++) gf256v_add( tmp+i*TMPVEC_LEN+_O1_BYTE , tmp2+i*TMPVEC_LEN , _O2_BYTE );
-    madd_reduce( z , tmp , _PUB_M_BYTE );
-}
-
-
-
-
 

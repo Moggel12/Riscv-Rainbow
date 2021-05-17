@@ -73,29 +73,33 @@ int sign()
     // msg_end = (unsigned char *) msg + mlen;
     unsigned char msg[mlen];
     unsigned char signature[mlen + CRYPTO_BYTES];
-	send_start();
 
     for (unsigned long long i = 0; i < mlen; i++) {
         msg[i] = hal_getc();
     }
 
+    send_start();
+
 	// unsigned char * signature = malloc( mlen + CRYPTO_BYTES );
 	// signature_end = (unsigned char *) signature + mlen + CRYPTO_BYTES;
+
+    send_bytes("Message", msg, mlen);
 
 	smlen = 0;
 	r = crypto_sign( signature, &smlen, msg , mlen , _sk );
 	if( 0 != r ) {
         send_string("Status", "Failure");
+        send_stop();
 		return -1;
 	}
     
 	/*
 	 * Output signed message as above
 	 */
-    send_string("Message", (char *) msg);
     // send_bytes("sk_value", _sk, CRYPTO_SECRETKEYBYTES);
-    send_bytes("Signature", signature, mlen + CRYPTO_BYTES);
-    
+
+    send_bytes("Signature", signature + mlen, CRYPTO_BYTES);
+
     send_string("Status", "Success");
 
     send_stop();

@@ -27,7 +27,6 @@
 /////////////////////////////
 
 
-
 #define _MAX_O  ((_O1>_O2)?_O1:_O2)
 #define _MAX_O_BYTE  ((_O1_BYTE>_O2_BYTE)?_O1_BYTE:_O2_BYTE)
 
@@ -184,30 +183,6 @@ int rainbow_verify( const uint8_t * digest , const uint8_t * signature , const p
 {
     unsigned char digest_ck[_PUB_M_BYTE];
     rainbow_publicmap( digest_ck , pk->pk , signature );
-
-    return _rainbow_verify( digest , signature+_PUB_N_BYTE , digest_ck );
-}
-
-
-
-///////////////  cyclic version  ///////////////////////////
-
-
-int rainbow_sign_cyclic( uint8_t * signature , const csk_t * csk , const uint8_t * digest )
-{
-    sk_t _sk;
-    sk_t * sk = &_sk;
-    generate_secretkey_cyclic( sk, csk->pk_seed , csk->sk_seed );   // generating classic secret key.
-
-    int r = rainbow_sign( signature , sk , digest );
-    memset( sk , 0 , sizeof(sk_t) );  // clean
-    return r;
-}
-
-int rainbow_verify_cyclic( const uint8_t * digest , const uint8_t * signature , const cpk_t * _pk )
-{
-    unsigned char digest_ck[_PUB_M_BYTE];
-    rainbow_publicmap_cpk( digest_ck , _pk , signature );
 
     return _rainbow_verify( digest , signature+_PUB_N_BYTE , digest_ck );
 }

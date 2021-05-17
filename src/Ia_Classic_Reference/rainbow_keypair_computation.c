@@ -95,20 +95,9 @@ void extcpk_to_pk( pk_t * pk , const ext_cpk_t * cpk )
 ////////////////////////////////////////////////////////////////////////////
 
 
-
-// Choosing implementations depends on the macros: _BLAS_SSE_ and _BLAS_AVX2_
-#if defined(_BLAS_SSE_) || defined(_BLAS_AVX2_)
-#include "rainbow_keypair_computation_simd.h"
-#define calculate_Q_from_F_impl        calculate_Q_from_F_simd
-#define calculate_F_from_Q_impl        calculate_F_from_Q_simd
-#define calculate_Q_from_F_cyclic_impl calculate_Q_from_F_cyclic_simd
-
-#else
-
 #define calculate_Q_from_F_ref        calculate_Q_from_F_impl
 #define calculate_F_from_Q_ref        calculate_F_from_Q_impl
 #define calculate_Q_from_F_cyclic_ref calculate_Q_from_F_cyclic_impl
-
 
 
 /////////////////////////////////////////////////////////
@@ -295,93 +284,6 @@ void calculate_F_from_Q_ref( sk_t * Fs , const sk_t * Qs , const sk_t * Ts )
 }
 
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-static
-void calculate_Q_from_F_cyclic_ref( cpk_t * Qs, const sk_t * Fs , const sk_t * Ts )
-{
-// Layer 1: Computing Q5, Q3, Q6, Q9
-
-//  Q_pk.l1_F5s[i] = UT( T1tr* (F1 * T1 + F2) )
-    const unsigned char * t2 = Ts->t4;
-
-// assuming _O2 >= _O1
-#define _SIZE_BUFFER_F2 (_O2_BYTE * _V1 * _O2)
-    unsigned char _ALIGN_(32) buffer_F2[_SIZE_BUFFER_F2];
-    memcpy( buffer_F2 , Fs->l1_F2 , _O1_BYTE * _V1 * _O1 );
-    batch_trimat_madd( buffer_F2 , Fs->l1_F1 , Ts->t1 , _V1, _V1_BYTE , _O1, _O1_BYTE );      // F1*T1 + F2
-
-// assuming _O2 >= _O1
-#define _SIZE_BUFFER_F3 (_O2_BYTE * _V1 * _O2)
-    unsigned char _ALIGN_(32) buffer_F3[_SIZE_BUFFER_F3];
-    memset( buffer_F3 , 0 , _O1_BYTE * _V1 * _O2 );
-    batch_matTr_madd( buffer_F3 , Ts->t1 , _V1, _V1_BYTE, _O1, buffer_F2, _O1, _O1_BYTE );  // T1tr*(F1*T1 + F2) , release buffer_F2
-    memset( Qs->l1_Q5 , 0 , _O1_BYTE * N_TRIANGLE_TERMS(_O1) );
-    UpperTrianglize( Qs->l1_Q5 , buffer_F3 , _O1, _O1_BYTE );                        // UT( ... )   // Q5 , release buffer_F3
-
-/*
-    F1_T2     = F1 * t2
-    F2_T3     = F2 * t3
-    F1_F1T_T2 + F2_T3 = F1_T2 + F2_T3 + F1tr * t2
-    Q_pk.l1_F3s[i] =         F1_F1T_T2 + F2_T3
-    Q_pk.l1_F6s[i] = T1tr* ( F1_F1T_T2 + F2_T3 ) + F2tr * t2
-    Q_pk.l1_F9s[i] = UT( T2tr* ( F1_T2 + F2_T3 ) )
-*/
-    memset( Qs->l1_Q3 , 0 , _O1_BYTE * _V1 * _O2 );
-    memset( Qs->l1_Q6 , 0 , _O1_BYTE * _O1 * _O2 );
-    memset( Qs->l1_Q9 , 0 , _O1_BYTE * N_TRIANGLE_TERMS(_O2) );
-
-    batch_trimat_madd( Qs->l1_Q3 , Fs->l1_F1 , t2 , _V1, _V1_BYTE , _O2, _O1_BYTE );        // F1*T2
-    batch_mat_madd( Qs->l1_Q3 , Fs->l1_F2 , _V1, Ts->t3 , _O1, _O1_BYTE , _O2, _O1_BYTE );  // F1_T2 + F2_T3
-
-    memset( buffer_F3 , 0 , _O1_BYTE * _V1 * _O2 );
-    batch_matTr_madd( buffer_F3 , t2 , _V1, _V1_BYTE, _O2, Qs->l1_Q3, _O2, _O1_BYTE );    // T2tr *  ( F1_T2 + F2_T3 )
-    UpperTrianglize( Qs->l1_Q9 , buffer_F3 , _O2 , _O1_BYTE );                            // Q9 , release buffer_F3
-
-    batch_trimatTr_madd( Qs->l1_Q3 , Fs->l1_F1 , t2 , _V1, _V1_BYTE, _O2, _O1_BYTE );       // F1_F1T_T2 + F2_T3  // Q3
-
-    batch_bmatTr_madd( Qs->l1_Q6 , Fs->l1_F2, _O1, t2, _V1, _V1_BYTE, _O2, _O1_BYTE );      // F2tr*T2
-    batch_matTr_madd( Qs->l1_Q6 , Ts->t1, _V1, _V1_BYTE, _O1, Qs->l1_Q3, _O2, _O1_BYTE );   // Q6
-/*
-    Layer 2
-    Computing Q9:
-
-    F1_T2     = F1 * t2
-    F2_T3     = F2 * t3
-    Q9 = UT( T2tr*( F1*T2 + F2*T3 + F3 )  +  T3tr*( F5*T3 + F6 ) )
-*/
-#if _SIZE_BUFFER_F3 < _O2_BYTE * _V1 * _O2
-error: incorrect buffer size.
-#endif
-    memcpy( buffer_F3 , Fs->l2_F3 , _O2_BYTE * _V1 * _O2 );
-    batch_trimat_madd( buffer_F3 , Fs->l2_F1 , t2 , _V1, _V1_BYTE , _O2, _O2_BYTE );       // F1*T2 + F3
-    batch_mat_madd( buffer_F3 , Fs->l2_F2 , _V1, Ts->t3 , _O1, _O1_BYTE , _O2, _O2_BYTE ); // F1_T2 + F2_T3 + F3
-
-#if _SIZE_BUFFER_F2 < _O2_BYTE * _V1 * _O2
-error: incorrect buffer size.
-#endif
-    memset( buffer_F2 , 0 , _O2_BYTE * _V1 * _O2 );
-    batch_matTr_madd( buffer_F2 , t2 , _V1, _V1_BYTE, _O2, buffer_F3, _O2, _O2_BYTE );   // T2tr * ( ..... )  , release buffer_F3
-
-#if _SIZE_BUFFER_F3 < _O2_BYTE*_O1*_O2
-error: incorrect buffer size.
-#endif
-    memcpy( buffer_F3 , Fs->l2_F6 , _O2_BYTE * _O1 *_O2 );
-    batch_trimat_madd( buffer_F3 , Fs->l2_F5 , Ts->t3 , _O1, _O1_BYTE, _O2, _O2_BYTE );     // F5*T3 + F6
-
-    batch_matTr_madd( buffer_F2 , Ts->t3 , _O1, _O1_BYTE, _O2, buffer_F3, _O2, _O2_BYTE ); // T2tr*( ..... ) + T3tr*( ..... )
-    memset( Qs->l2_Q9 , 0 , _O2_BYTE * N_TRIANGLE_TERMS(_O2) );
-    UpperTrianglize( Qs->l2_Q9 , buffer_F2 , _O2 , _O2_BYTE );                              // Q9
-
-    memset( buffer_F2 , 0 , _SIZE_BUFFER_F2 );
-    memset( buffer_F3 , 0 , _SIZE_BUFFER_F2 );
-}
-
-
-
-#endif   //  #if defined(_BLAS_SSE_) || defined(_BLAS_AVX2_)
-
-
 ///////////////////////////////////////////////////////////////////////
 
 
@@ -394,42 +296,8 @@ void calculate_Q_from_F( ext_cpk_t * Qs, const sk_t * Fs , const sk_t * Ts )
 }
 
 
-#if defined(_SUPERCOP_)
-
-
-static inline
-void _calculate_F_from_Q( sk_t * Fs , const sk_t * Qs , const sk_t * Ts )
-{
-    sk_t _Qs;
-    memcpy( &_Qs , Qs , sizeof(sk_t) );
-    if( Fs != Ts ) memcpy( Fs , Ts , sizeof(Ts->sk_seed)+sizeof(Ts->s1)+sizeof(Ts->t1)+sizeof(Ts->t4)+sizeof(Ts->t3));
-    calculate_F_from_Q_impl( Fs , &_Qs , Ts );
-    memset( &_Qs , 0 , sizeof(sk_t) );
-}
-
-//IF_CRYPTO_CORE:#include "crypto_core.h"
-
-// exported calculate_F_from_Q_impl()
-int crypto_core(unsigned char *outbytes,const unsigned char *inbytes,const unsigned char *kbytes,const unsigned char *cbytes)
-{
-    (void) cbytes;
-    _calculate_F_from_Q( (sk_t*)outbytes , (const sk_t*)inbytes , (const sk_t*) kbytes );
-    return 0;
-}
-
-#else
-
 void calculate_F_from_Q( sk_t * Fs , const sk_t * Qs , const sk_t * Ts )
 {
     calculate_F_from_Q_impl( Fs , Qs , Ts );
 }
-
-#endif
-
-
-void calculate_Q_from_F_cyclic( cpk_t * Qs, const sk_t * Fs , const sk_t * Ts )
-{
-    calculate_Q_from_F_cyclic_impl( Qs , Fs , Ts );
-}
-
 

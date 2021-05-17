@@ -108,28 +108,6 @@ struct rainbow_secretkey_cyclic {
 ///
 int generate_keypair( pk_t * pk, sk_t* sk, const unsigned char *sk_seed );
 
-///
-/// @brief Generate key pairs for cyclic rainbow.
-///
-/// @param[out] pk        - the public key.
-/// @param[out] sk        - the secret key.
-/// @param[in]  pk_seed   - seed for generating parts of public key.
-/// @param[in]  sk_seed   - seed for generating secret key.
-/// @return 0 for success. -1 otherwise.
-///
-int generate_keypair_cyclic( cpk_t * pk, sk_t* sk, const unsigned char *pk_seed , const unsigned char *sk_seed );
-
-///
-/// @brief Generate compressed key pairs for cyclic rainbow.
-///
-/// @param[out] pk        - the public key.
-/// @param[out] sk        - the compressed secret key.
-/// @param[in]  pk_seed   - seed for generating parts of the public key.
-/// @param[in]  sk_seed   - seed for generating the secret key.
-/// @return 0 for success. -1 otherwise.
-///
-int generate_compact_keypair_cyclic( cpk_t * pk, csk_t* sk, const unsigned char *pk_seed , const unsigned char *sk_seed );
-
 ////////////////////////////////////
 
 ///

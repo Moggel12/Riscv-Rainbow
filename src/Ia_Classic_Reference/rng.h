@@ -18,8 +18,6 @@
 #define RNG_BAD_OUTBUF  -2
 #define RNG_BAD_REQ_LEN -3
 
-//#define _SUPERCOP_
-
 
 typedef struct {
     unsigned char   buffer[16];

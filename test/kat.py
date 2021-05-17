@@ -90,7 +90,6 @@ def test_sign(args):
         try:
             for i in range(sk_size):
                 ser.write([sk[i]])
-            print(message)
             init_send(message, ser)
             data = read_uart(ser)
             if bytes.fromhex(data["Signature"]) == signature_b:
@@ -172,9 +171,9 @@ def get_kat_file(kat_id, f, f_type):
         content = msg_f.read()
     return content
 
-def write_bench_file(kat_id, time):
-    with open(f"bench_{time()}_{input("Lookuptable, bitsliced or standard?")}") as bench_file:
-        bench_file.write("Time: " + time)
+# def write_bench_file(kat_id, time):
+#     with open(f"bench_{time()}_{input("Lookuptable, bitsliced or standard?")}") as bench_file:
+#         bench_file.write("Time: " + time)
 
 def get_keys(pk, sk):
     keys = None

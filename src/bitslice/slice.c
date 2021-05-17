@@ -16,6 +16,14 @@ void binary_print(uint32_t number)
     }
 }
 
+uint8_t gf16v_get_ele(const uint8_t *a, unsigned i) {
+    uint8_t r = a[i >> 1];
+    uint8_t r0 = r&0xf;
+    uint8_t r1 = r>>4;
+    uint8_t m = (uint8_t)(-(i&1));
+    return (r1&m)|((~m)&r0);
+}
+
 void slice_32(uint8_t *coefficients, uint32_t sliced[]) 
 {
     uint32_t expanded, bit;
@@ -24,7 +32,7 @@ void slice_32(uint8_t *coefficients, uint32_t sliced[])
     {
         for (int j = 31; j >= 0; j--) 
         {
-            expanded = (uint32_t) coefficients[31 - j];
+            expanded = (uint32_t) gf16v_get_ele(coefficients, 31-j);
             bit = (((expanded >> i)) & ((uint32_t) 1)) << j;
             sliced[i] = sliced[i] | bit;
         }
@@ -38,7 +46,7 @@ hl_poly slice_column(uint8_t coefficients[])
 
     slice_32(coefficients, sliced_upper32); 
 
-    slice_32(coefficients + 32, sliced_lower32);
+    slice_32(coefficients + 16, sliced_lower32);
 
     uint32_t zeros[4] = {0, 0, 0, 0};
     uint32_t high_fst[2] = {sliced_upper32[3], sliced_lower32[3]};
@@ -74,12 +82,12 @@ void deslice(hl_poly res, uint8_t coefficients[])
     }
 }
 
-void sliced_compute_publicmap() 
+void sliced_compute_publicmap(const uint8_t *digest, const uint8_t *signature, const uint8_t *pk); 
 {
     /*
      * PSEUDO-CODE FOR PROCEDURE:
      * Initialize hl_poly *total* with zero values
-     * Initialize a coefficient array *coeff* of size 64
+     * Initialize a coefficient array *coeff* of size 32
      * For i = 1 to pk_size/64
      *     Compute the hl_poly *current* for column i
      *     Expand z[i] to a hl_poly
@@ -87,12 +95,21 @@ void sliced_compute_publicmap()
      *     total = gf16_add(current, total)
      * deslice(total, coeff)
      */
+    hl_poly total = expand_variable(zero);
+    uint8_t coefficients[32];
+    for (int i = 0; i < CRYPTO_PUBLICKEYBYTES/32; i++) {
+        hl_poly current = slice_column(pk[i*32]);
+        hl_poly x_ix_j = expand_variable(gf16v_get_ele(signature, i));
+        hl_poly prod = gf16_prod(current, x_ix_j);
+        total = gf16_add(current, total);
+    }
+    
 }
 
 hl_poly expand_variable(uint8_t val) 
 {
     uint32_t filler;
-    uint32_t static_arr[2];
+    uint32_t static_arr[2] = {0,0};
     uint32_t high_fst[2];
     uint32_t high_cnst[2];
     uint32_t low_fst[2];
