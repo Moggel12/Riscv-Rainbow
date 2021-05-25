@@ -24,7 +24,7 @@ uint8_t gf16v_get_ele(const uint8_t *a, unsigned i) {
     return (r1&m)|((~m)&r0);
 }
 
-void slice_32(uint8_t *coefficients, uint32_t sliced[]) 
+void slice_32(const uint8_t *coefficients, uint32_t sliced[]) 
 {
     uint32_t expanded, bit;
 
@@ -39,7 +39,7 @@ void slice_32(uint8_t *coefficients, uint32_t sliced[])
     }
 }
 
-hl_poly slice_column(uint8_t coefficients[]) 
+hl_poly slice_column(const uint8_t coefficients[]) 
 {
     uint32_t sliced_upper32[4] = {0, 0, 0, 0};
     uint32_t sliced_lower32[4] = {0, 0, 0, 0};
@@ -82,7 +82,40 @@ void deslice(hl_poly res, uint8_t coefficients[])
     }
 }
 
-void sliced_compute_publicmap(const uint8_t *digest, const uint8_t *signature, const uint8_t *pk); 
+void print_poly(hl_poly f) {
+    printf("High-level:\n");
+    binary_print(f.high.snd[0]); 
+    printf(" ");
+    binary_print(f.high.fst[0]); 
+    printf(" "); 
+    binary_print(f.high.cnst[0]);
+    printf("\n"); 
+    binary_print(f.high.snd[1]);
+    printf(" ");
+    binary_print(f.high.fst[1]); 
+    printf(" ");
+    binary_print(f.high.cnst[1]);
+    printf("\nLow-level:\n");
+    binary_print(f.low.snd[0]); 
+    printf(" ");
+    binary_print(f.low.fst[0]); 
+    printf(" ");
+    binary_print(f.low.cnst[0]); 
+    printf("\n");
+    binary_print(f.low.snd[1]);
+    printf(" ");
+    binary_print(f.low.fst[1]); 
+    printf(" ");
+    binary_print(f.low.cnst[1]);
+}
+
+void despand(hl_poly poly, uint8_t *var)
+{
+    *var = 0;
+    *var = 0 ^ ((poly.high.fst[0] >> 28) ^ ((poly.high.cnst[0] >> 29) ^ (poly.low.fst[0] >> 30) ^ (poly.low.cnst[0] >> 31)));
+}
+
+void sliced_compute_publicmap(uint8_t *digest, const uint8_t *signature, const uint8_t *pk)
 {
     /*
      * PSEUDO-CODE FOR PROCEDURE:
@@ -95,15 +128,27 @@ void sliced_compute_publicmap(const uint8_t *digest, const uint8_t *signature, c
      *     total = gf16_add(current, total)
      * deslice(total, coeff)
      */
-    hl_poly total = expand_variable(zero);
-    uint8_t coefficients[32];
-    for (int i = 0; i < CRYPTO_PUBLICKEYBYTES/32; i++) {
-        hl_poly current = slice_column(pk[i*32]);
-        hl_poly x_ix_j = expand_variable(gf16v_get_ele(signature, i));
-        hl_poly prod = gf16_prod(current, x_ix_j);
-        total = gf16_add(current, total);
+    // hl_poly total = expand_variable(0);
+    uint32_t idx = 0, i, j;
+    for (j = 0; j < 100; j++)
+    {
+        for (i = j; i < 100; i++)
+        {
+            // hl_poly current = slice_column(&(pk[(idx++)*32]));
+            uint8_t xi = gf16v_get_ele(signature, i);
+            uint8_t xj = gf16v_get_ele(signature, j);
+            // printf("x_%ux_%u: %u, %u\n", j+1, i+1, xj, xi);
+            printf("x_%ux_%u: %u, %u\n", i + 1, j + 1, xi, xj);
+            hl_poly x_ix_j = gf16_prod(expand_variable(xi), expand_variable(xj));
+            uint8_t var;
+            despand(x_ix_j, &var);
+            printf("= %u\n", var);
+            // hl_poly prod = gf16_prod(current, x_ix_j);
+            // total = gf16_add(current, total);
+            printf("===================\n");
+        }
     }
-    
+    // deslice(total, digest);
 }
 
 hl_poly expand_variable(uint8_t val) 

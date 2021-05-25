@@ -1,19 +1,21 @@
 \section{Optimizations} \label{opti}
 For this project multiple approaches were tested for running Rainbow on a constrained-computing platform such as those typically seen in embedded devices. Section \ref{opt:gf16comp} goes into detail on how elements of GF16 are treated for the optimizations of this project. It also specifies the notation used in \cref{opt:lookup} and \cref{opt:bitslice}. The latter two sections each show how the theoretical aspect of the optimization works as well as showing how it was implemented.
 \subsection{GF(16) Computation} \label{opt:gf16comp}
-For the subsequent sections after this the notation assumes a bit of knowledge on how a $GF(16)$ element can be treated. Any element in $GF(16)$ can be represented as a \emph{polynomial of polynomials}. What is meant by this is that any element in $GF(16)$ can take the form
+The subsequent sections after this, the notation assumes a bit of knowledge on how a $GF(16)$ element can be represented. Any element in $GF(16)$ can be represented as a \emph{polynomial of polynomials}. What is meant by this is that any element in $GF(16)$ can take the form
 $$
-    \alpha a + \beta
+    \alpha b + \beta
 $$
 where $\alpha$ and $\beta$ both are of the form 
 $$
-    \gamma b + \delta
+    \gamma a + \delta
 $$
-such that the \emph{outermost} polynomial is linear over variable $a$ and the two \emph{innermost} are linear over the variable $b$. This is the same as expressing a $GF(16)$ element as a first-degree polynomial with first degree polynomials as coefficients.\medskip\\
-One way of approaching such a representation for $GF(16)$ is then to have the coefficients of the \emph{outermost} polynomial be $GF(4)$ elements, which themselves are represented as the first degree polynomials over the variable $b$. The coefficients of the \emph{innermost} polynomial would then be $GF(2)$ elements, holding exactly a binary value.\medskip\\
-By the above constructions it is then clear that a $GF(16)$ value can be represented using two, layered, polynomials where the innermost has binary coefficients. An example of such a $GF(16)$ coefficient could be
+such that the \emph{outermost} polynomial is linear over variable $b$ and the two \emph{innermost} are linear over the variable $a$. This is the same as expressing a $GF(16)$ element as a first-degree polynomial with first degree polynomials as coefficients. Representing a $GF(16)$ value this way is also called \emph{Tower-field representation}.
+\medskip\\
+Using Tower-field representation for $GF(16)$ elements has the coefficients of the \emph{outermost} degree-1 polynomial be $GF(4)$ elements, which themselves are represented as the degree-1 polynomials over the variable $b$. The coefficients of the \emph{innermost} polynomial would then be $GF(2)$ elements, holding exactly a binary value.
+\medskip\\
+By the above constructions it is then clear that a $GF(16)$ value can be represented using two, layered, polynomials where the innermost has binary coefficients, also called Tower-field representation. An example of such a $GF(16)$ coefficient could be
 $$
-    (1b + 0) a + (1b + 1) = (1b)a + (1b + 1)
+    (1a + 0) b + (1a + 1)
 $$
 Further, for the following subsections I expand upon this by writing such a polynomial either as the bitstring (using the above element as reference)
 $$
@@ -21,13 +23,13 @@ $$
 $$
 or using square brackets to denote the coefficients of the innermost polynomial
 $$
-    [10]a + [11]
+    [10]b + [11] = [10][11]
 $$
 \subsection{Lookup tables} \label{opt:lookup}
-For a system over $GF(16)$ coefficients, the elements might take one of 16 different values. Throughout the publicmap computation, multiplication over such $GF(16)$ values are done quite a few times. Though, most modern architectures, and especially the \texttt{RISC-V} architecture, have not been built to support arithmetic over such finite fields. For this reason, to test whether or not the bit-manipulation approach in the reference code is a bottleneck, I used a basic lookuptable approach to compute the multiplication result of two values in $GF(16)$.\medskip\\
+For a system over $GF(16)$ coefficients, the elements might take one of 16 different values. Throughout the publicmap computation, multiplication over such $GF(16)$ values are done quite a few times. However, most modern architectures, and especially the \texttt{RISC-V} architecture, have not been built to support arithmetic over such finite fields. For this reason, to test whether or not the bit-manipulation approach in the reference code is a bottleneck, I used a basic lookuptable approach to compute the multiplication result of two values in $GF(16)$.\medskip\\
 Computing the $16 \times 16$ table of $GF(16)$ elements was done using the original multiplication code and running it for each combination of $GF(16)$ values that exist. 
 The table looks as \cref{lookuptable} and lies in the \texttt{gf16.h} file, in the function \texttt{gf16\_mul()}.
-\begin{figure}[h]
+\begin{figure}[t]
     \centering
     \begin{tabular}{|c|c|c|c|c|c|c|}
         \hline
@@ -47,7 +49,214 @@ The table looks as \cref{lookuptable} and lies in the \texttt{gf16.h} file, in t
 \end{figure}\\
 Since each $GF(16)$ can be stored in one \texttt{uint8\_t} each, it is possible to have at most 256 (plus, potentially some overhead bytes) bytes of space used for a table like above. Given a constrained system like this, a space-speed tradeoff have to be considered thoroughly. This tradeoff will be evaluated further in \cref{evalsec}.\medskip\\
 The specific implementation uses two $GF(16)$ elements, $a$ and $b$, as input and indexes the table using $a*16 + b$, as both $a$ and $b$ are promised to maximally use four bits of memory. This, of course, needs some external checks on the amount of bits used in $a$ and $b$ to be fully secure, though it was not seen as a major insecurity on the system to be addressed immediately.\medskip\\
-Should it be a problem using \texttt{256} bytes of memory, some memory can be saved by not computing multiplications where one polynomial is of value $0$ but just returning a $0$ byte to the caller. The tradeoff here is then that the indexing of the table might become a bit more intricate than it is now plus an additional check is done before any actual lookup is done.
+Should it be a problem using \texttt{256} bytes of memory, some memory can be saved by not computing multiplications where one polynomial is of value $0$ or pure $1$s but just returning a $0$ byte to the caller, in case of $0$. When one of the polynomials is of all $1$s the case is equally as trivial, where the procedure should just return the other polynomial. The tradeoff here is then that the indexing of the table might become a bit more intricate than it is now plus an additional check is done before any actual lookup is done.\medskip\\
+Further, as the multiplication of elements occurs during the execution of \texttt{gf16v\_mul\_scalar()}, the code goes through all the $GF(16)$ elements provided in the \texttt{uint8\_t *a} array, multiplying the value of \texttt{uint8\_t gf16\_b} onto each. Due to the nature of the public map computation, the calls to this multiplication function happens quite a few times with various sizes of the array \texttt{a}. This implies that going through each element of \texttt{a} one-by-one might have some performance implications as well. This will be evaluated in \cref{evalsec}.
 \subsection{Bitslicing} \label{opt:bitslice}
+This subsection seeks to show how bitslicing for this project was tackled on both a more theoretical level aswell as how it \textbf{WAS/SHOULD BE} implemented in reality. For \cref{bitslice:theory} the theoretical design of the system is discussed, while \cref{bitslice:implementation} provides and explanation of how it \textbf{WAS/COULD BE} brought to actual \texttt{c}-code.
 \subsubsection{Design of a Bitsliced System for GF(16)} \label{bitslice:theory}
+To start this section off, the basic approach to multiplying two polynomials with polynomial coefficients is shown. Such a polynomial has the form
+$$
+    f = f_1b + f_0
+$$
+where all
+$$
+    f_i = f_{i1}a+f_{i0}
+$$
+are the \emph{inner} polynomials of $f$ for $i = 0$ and $i = 1$.\\ 
+Given any two such polynomials,
+\begin{equation*}
+    \begin{split}
+        f &= (f_{11}a+f_{10})b + (f_{01}a + f_{00})\\
+        g &= (g_{11}a+g_{10})b + (g_{01}a + g_{00})
+    \end{split}
+\end{equation*}
+the product can be computed by
+\begin{equation} \label{bitslice:poly}
+    \begin{split}
+        f \cdot g &= (f_{11}a + f_{10})(g_{11}a + g_{10})b^2\\
+        &+ (f_{11} a + f_{10})(g_{01}a + g_{00})b\\ 
+        &+ (f_{01}a + f_{00})(g_{11}a + g_{10})b\\ 
+        &+ (f_{01} a + f_{00})(g_{01}a + g_{00})\\
+        &= (f_{11}g_{11}a^2 + (f_{11}g_{10} + f_{10}g_{11})a + f_{10}g_{10})b^2\\
+        &+ (f_{11}g_{01}a^2 + (f_{11}g_{00} + f_{10}g_{01})a + f_{10}g_{00})b\\
+        &+ (f_{01}g_{11}a^2 + (f_{01}g_{10} + f_{00}g_{11})a + f_{00}g_{10})b\\
+        &+ (f_{01}g_{01}a^2 + (f_{01}g_{00} + f_{00}g_{01})a + f_{00}g_{00})\\
+    \end{split}
+\end{equation}
+Using the above notions we are able to construct a theoretical plan for bitslicing.
+\medskip\\
+Now, provided some MQ system over $GF(16)$ with $64$ polynomials in total, as this project has Rainbow level $I$ in focus, the \emph{Tower-field representation} mentioned in \cref{opt:gf16comp} is suitable. Given this representation, it is possible to decompose any multiplication and addition operation over two $GF(16)$ elements into a simple $\xor$ or $\wedge$ operation, respectively. In \cref{opt:gf16comp} it was discussed that this representation of $GF(16)$ elements decomposes into \emph{layered} polynomials of $GF(2)$ elements. As elements of $GF(2)$ is a binary number system, the two formerly mentioned operations are well-defined and certainly part of typical ISAs.\medskip\\
+For the two $GF(16)$ values in Tower-field representation
+$$
+    x = [11]b + [01]
+$$
+and
+$$
+    y = [01]b + [01]
+$$
+the product is computed by
+\begin{equation*}
+    \begin{split}
+        x \cdot y &= ((1a + 1)b + (0b + 1)) \cdot ((0a + 1)b + (0a + 1))\\
+        &= ((1 \wedge 0)a^2 + ((1 \wedge 1) \xor (1 \wedge 0))a + (1 \wedge 1))b^2\\ 
+        &+ ((1 \wedge 0)a^2 + ((1 \wedge 1) \xor (1 \wedge 0))a + (1 \wedge 1))b\\
+        &+ ((0 \wedge 0)a^2 + ((0 \wedge 1) \xor (1 \wedge 0))a + (1 \wedge 1))b\\
+        &+ ((0 \wedge 0)a^2 + ((0 \wedge 1) \xor (1 \wedge 0))a + (1 \wedge 1))\\
+        &= (0a^2 + 1a + 1)b^2 + (0a^2 + 1a + 1)b + (0a^2 + 0a + 1)b\\
+        &+ (0a^2 + 0a + 1)\\
+    \end{split}
+\end{equation*}
+where any $+$ not converted to an $\xor$ resembles a plus operation \emph{kept intact} with the purpose of keeping the polynomial structure of the element. Rephrased, these plusses resemble the borders of the different degrees of the three terms. Further developing the above computation for $GF(16)$ specifically would require the two linear terms to be term-wise/bit-wise \texttt{xor}'ed providing a single linear term.
+\begin{equation*}
+    \begin{split}
+        x\cdot y &= (0a^2 + 1a + 1)b^2 + ((0 \xor 0)a^2 + (1 \xor 0)a + (1 \xor 1))b + (0a^2 + 0a + 1)\\
+        &= (a + 1)b^2 + (a + 0)b + (0a + 1)
+    \end{split}
+\end{equation*}
+As multiplying two first degree polynomials, with linear terms having nonzero coefficients, results in a quadratic term, the polynomial above has to be \emph{reduced} for it to comply with the Tower-field representation and for it to only represent a $GF(16)$ value. A reduction like this is done by \texttt{xor}'ing the quadratic term (the bits of $q$ in $qb^2$) multiplied by $1$ onto the linear term and by $a$ onto the constant term
+\begin{equation*}
+    \begin{split}
+        x\cdot y &= ((a + 0) + (a + 1)*(0a + 1))b + ((0a + 1) + (a + 1)*(a + 0))\\
+        &= ((a + 0) + (a + 1))b + ((0a^2 + 0a + 1) + (a^2 + a + 0)))\\
+        &= ((a + 0) + (a + 1))b + ((0a^2 + 0a + 1) + ((1 \xor 1)a + (1 \xor 0)))\\
+        &= ((a + 0) + (a + 1))b + ((0a + 1) + (0a + 1))\\
+        &= ((1 \xor 1)a + (0 \xor 1))b + ((0 \xor 0)a + (1 \xor 1))\\
+        &= (0a + 1)b + (0a + 0)
+    \end{split}
+\end{equation*}
+The reduction of the $GF(4)$ values, or the \textit{inner} polynomials, were done by \texttt{xor}'ing the quadratic term onto the linear and constant terms respectively (which was not necessary in this example as all quadratic terms were 0). These reductions can be done in different ways, though this is the one originally used by the Rainbow authors.
+\medskip\\
+To be able to provide a potential speedup for Rainbow, all operations are going to be on multiple elements at once. This means that any multiplication performed on a term of the public key $P$ and corresponding values of the signature $\textbf{z}$ will be computed using multiple terms of the public key at once. To help with this, I now denote four \emph{registers} for holding certain bits of a $GF(16)$ elements for this theoretical bitslicing construction.
+\begin{enumerate}
+    \item $r_3$ holding the high order bits of the "high-order polynomials"
+    \item $r_2$ holding the low-order bits of the "high-order polynomials"
+    \item $r_1$ holding the high-order bits of the "low-order polynomials"
+    \item $r_0$ holding the low-order bits of the "low-order polynomials"
+\end{enumerate}
+The usage of these can be shown by providing the toy system $P$ (though, this system is not compliant with any of the security levels of Rainbow)
+\begin{equation*}
+    \begin{split}
+        p_1(x,y) &= ([01]b + [11]) xy + ([11]b + [00]) x + ([10]b + [01]) y + ([11]b + [11])\\
+        p_2(x,y) &= ([00]b + [11]) xy + ([01]b + [01]) x + ([10]b + [10]) y + ([10]b + [01])\\
+        p_3(x,y) &= ([00]b + [00]) xy + ([10]b + [00]) x + ([01]b + [10]) y + ([10]b + [11])
+    \end{split}
+\end{equation*}
+For the $xy$ term, across polynomials of $P$, the computation uses the \emph{register}-values (visually shown as column vectors)
+$$
+    r_3 = \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}, r_2 = \begin{bmatrix} 1\\ 0\\ 0 \end{bmatrix}, r_1 = \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix}, r_0 = \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix}
+$$
+Then, any \emph{index} of $\textbf{z}$ can be expanded to a corresponding set of vectors. The value of $xy$, computed earlier, will now be used to showcase the computation upon an entire system. This kind of procedure uses an accumulator that in the end is the final result of the computation. That is, let $total$ be a vector of size three for this example. When the computation is done
+$$
+    P(\textbf{z}) = total
+$$
+Initially we have 
+$$
+    total = 
+    [
+    \begin{bmatrix}
+        0\\
+        0\\
+        0
+    \end{bmatrix}a
+    + 
+    \begin{bmatrix}
+        0\\
+        0\\
+        0
+    \end{bmatrix} ]
+    [
+    \begin{bmatrix}
+        0\\
+        0\\
+        0
+    \end{bmatrix}a
+    + 
+    \begin{bmatrix}
+        0\\
+        0\\
+        0
+    \end{bmatrix} 
+    ] = \begin{bmatrix}
+        [00][00]\\
+        [00][00]\\
+        [00][00]
+    \end{bmatrix} 
+$$
+Provided the value $xy = [01][00]$, we can expand $xy$ such that each \textit{bit} becomes a vector in $\mathbb{R}^m$ consisting of all $1$s or all $0$s. For this value of $xy$ the corresponding \textit{expanded} values are
+$$
+    \textbf{xy} = 
+    [
+    \begin{bmatrix}
+        0\\
+        0\\
+        0
+    \end{bmatrix}a
+    + 
+    \begin{bmatrix}
+        1\\
+        1\\
+        1
+    \end{bmatrix} ]
+    [
+    \begin{bmatrix}
+        0\\
+        0\\
+        0
+    \end{bmatrix}a
+    + 
+    \begin{bmatrix}
+        0\\
+        0\\
+        0
+    \end{bmatrix} 
+    ] = \begin{bmatrix}
+        [01][00]\\
+        [01][00]\\
+        [01][00]
+    \end{bmatrix} 
+$$
+Once more we use the structure of the latter equality of \cref{bitslice:poly} as a template for structure the computation. Letting the coefficients of $\textbf{xy}$ be named $\textbf{xy}_3$, $\textbf{xy}_2$, $\textbf{xy}_1$, $\textbf{xy}_0$ such that
+$$
+    \textbf{xy}_3 = \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}, \textbf{xy}_2 = \begin{bmatrix} 1\\ 1\\ 1 \end{bmatrix}, \textbf{xy}_1 = \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}, \textbf{xy}_0 = \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}
+$$
+we can model the computation for the first term of the $MQ$ polynomials as
+\begin{equation*}
+    \begin{split}
+        t_2 &= ((r_3 \wedge \textbf{xy}_3)a^2 + ((r_3 \wedge \textbf{xy}_2) \xor (r_2 \wedge \textbf{xy}_3))a + (r_2 \wedge \textbf{xy}_2))b^2\\
+        t_{10} &= ((r_3 \wedge \textbf{xy}_1)a^2 + ((r_3 \wedge \textbf{xy}_0) \xor (r_2 \wedge \textbf{xy}_1))a + (r_2 \wedge \textbf{xy}_0))b\\
+        t_{11} &= ((r_1 \wedge \textbf{xy}_3)a^2 + ((r_1 \wedge \textbf{xy}_2) \xor (r_0 \wedge \textbf{xy}_3))a + (r_0 \wedge \textbf{xy}_2))b\\
+        t_0 &= ((r_1 \wedge \textbf{xy}_1)a^2 + ((r_1 \wedge \textbf{xy}_0) \xor (r_0 \wedge \textbf{xy}_1))a + (r_0 \wedge \textbf{xy}_0))
+    \end{split}
+\end{equation*}
+where each of these temporary \textit{inner} polymials represent a term of the \textit{outer} polynomial. The logic-operations of \texttt{xor} and \texttt{and} is then done index-wise across column vectors and term-wise across polynomials. An example is the computation of $t_1 = t_{10} \xor t_{11}$ where the computations are done like so
+\begin{equation*}
+    \begin{split}
+        t_{10} &= ((\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix})a^2 + ((\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}) \xor (\begin{bmatrix} 1\\ 0\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}))a + (\begin{bmatrix} 1\\ 0\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}))b\\
+        t_{10} &= (\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}a^2 + \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}a + \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix})b\\
+        t_{11} &= ((\begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix})a^2 + ((\begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 1\\ 1\\ 1 \end{bmatrix}) \xor (\begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}))a + (\begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 1\\ 1\\ 1 \end{bmatrix}))b\\
+        t_{11} &= (\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}a^2 + \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix}a + \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix})b\\
+        t_1 &= ((\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix} \xor \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix})a^2 + (\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix} \xor \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix})a + (\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix} \xor \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix}))b\\
+        t_1 &= (\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}a^2 + \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix}a + \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix})b
+    \end{split}
+\end{equation*}
+Once the temporary values have been computed they potentially need to be reduced, to remove any quadratic term. The first reduction done is on the $GF(4)$ elements, namely the polynomials over $a$. This is done, as specified earlier, by \texttt{xor}'ing (this time index-wise in each vector/register) the $a^2$ term onto the other two terms. Following the reduction of the $GF(4)$ elements a reduction of the $GF16$ element as a whole can be reduced. To do this, the temporary value $t_2$ is multiplied by
+$$
+    \begin{bmatrix}
+        1\\
+        1\\
+        1
+    \end{bmatrix}a 
+    + 
+    \begin{bmatrix}
+        0\\
+        0\\
+        0
+    \end{bmatrix}
+$$
+in the same fashion as when multiplying $\textbf{xy}$ with the coefficients held in the registers $r_i$, $i = 1,\dots, 4$. The result of this multiplication is then \texttt{xor}'ed onto $t_0$ term-wise. For $t_1$ the value of $t_2$ itself is \texttt{xor}'ed onto (no multiplication needed).\medskip\\
+Once the results of reducing $GF(16)$ element (the \textit{outer} polynomial) has been done, the values of $t_1$ and $t_0$ are \texttt{xor}'ed term-wise onto \textit{total}
+$$
+    total = [[00] \xor t_1] [[00] \xor t_0]
+$$
+This way, \textit{total} accumulates the results of doing term-wise $GF(16)$ multiplications by summing the products, as well as doing it on all $m$ coefficients of the current term (across polynomials).
 \subsubsection{Implementation of the Bitsliced Scheme} \label{bitslice:implementation}

@@ -52,24 +52,32 @@ static inline void _gf256v_conditional_add_u32(uint8_t *accu_b, uint8_t conditio
 ///////////////////////////////////////////////////
 
 static inline void _gf16v_mul_scalar_u32(uint8_t *a, uint8_t gf16_b, unsigned _num_byte) {
-    unsigned n_u32 = _num_byte >> 2;
-    for (unsigned i = 0; i < n_u32; i++) {
-      uint32_t ax;
-      memcpy(&ax,a+4*i,4);
-      ax = gf16v_mul_u32(ax, gf16_b);
-      memcpy(a+4*i,&ax,4);
-    }
 
-    unsigned rem = _num_byte & 3;
-    if( !rem ) return;
-    union tmp_32 {
-        uint8_t u8[4];
-        uint32_t u32;
-    } t;
-    a += (n_u32 << 2);
-    for (unsigned i = 0; i < rem; i++) t.u8[i] = a[i];
-    t.u32 = gf16v_mul_u32(t.u32, gf16_b);
-    for (unsigned i = 0; i < rem; i++) a[i] = t.u8[i];
+#if defined(LOOKUP_INC_ZERO)
+  for (unsigned i = 0; i < _num_byte; i++)
+  {
+    a[i] = gf16_mul(a[i], gf16_b);
+  }
+#else
+  unsigned n_u32 = _num_byte >> 2;
+  for (unsigned i = 0; i < n_u32; i++) {
+    uint32_t ax;
+    memcpy(&ax,a+4*i,4);
+    ax = gf16v_mul_u32(ax, gf16_b);
+    memcpy(a+4*i,&ax,4);
+  }
+
+  unsigned rem = _num_byte & 3;
+  if( !rem ) return;
+  union tmp_32 {
+      uint8_t u8[4];
+      uint32_t u32;
+  } t;
+  a += (n_u32 << 2);
+  for (unsigned i = 0; i < rem; i++) t.u8[i] = a[i];
+  t.u32 = gf16v_mul_u32(t.u32, gf16_b);
+  for (unsigned i = 0; i < rem; i++) a[i] = t.u8[i];
+#endif
 }
 
 static inline void _gf256v_mul_scalar_u32(uint8_t *a, uint8_t b, unsigned _num_byte) {

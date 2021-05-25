@@ -21,19 +21,25 @@ typedef struct
 
 #define CRYPTO_PUBLICKEYBYTES 161600
 
+#define _PUB_N_BYTE 50
+
 void binary_print(uint32_t num);
 
 uint8_t gf16v_get_ele(const uint8_t *a, unsigned i);
 
-void slice_32(uint8_t *coefficients, uint32_t sliced[]);
+void slice_32(const uint8_t *coefficients, uint32_t sliced[]);
+
+void print_poly(hl_poly f);
+
+void despand(hl_poly poly, uint8_t *var);
 
 /////////////////////////////////////////////////////////////////
 
 // Compute a system of multivariate polynomials over GF16 (bitsliced)
-void sliced_compute();
+void sliced_compute_publicmap(uint8_t *digest, const uint8_t *signature, const uint8_t *pk);
 
 // Slices a column of the coefficients in the Macaulay matrix
-hl_poly slice_column(uint8_t coefficients[]);
+hl_poly slice_column(const uint8_t coefficients[]);
 
 // Reconstruct uint8_t values from sliced result
 void deslice(hl_poly res, uint8_t coefficients[]);

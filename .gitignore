@@ -14,3 +14,11 @@ env
 __pycache__/*
 test/__pycache__
 *.bbl
+*.aux
+*.log
+*.blg
+*.fls
+*.out
+*.pdf
+*.toc
+*.fdb_latexmk

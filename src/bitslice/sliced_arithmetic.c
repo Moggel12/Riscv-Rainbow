@@ -1,5 +1,5 @@
 #include "slice.h"
-
+#include <stdio.h>
 // Multiplies two GF16 values, represented as polynomials with polynomial coefficients
 hl_poly gf16_prod(hl_poly f, hl_poly g) 
 { 
@@ -17,14 +17,27 @@ hl_poly gf16_prod(hl_poly f, hl_poly g)
     // Compute the constant term
     t0 = gf4_prod(f.low, g.low);
 
+    // Reduce the "high-level" polynomial in case t2 is nonzero
+    t1 = gf4_nonpure_add(t2, t1);
+    t0 = gf4_nonpure_add(t2, t0);
+
+
     // Make sure all temporary values are "pure" GF4 values
     gf4_reduce(t2);
     gf4_reduce(t1);
     gf4_reduce(t0);
 
-    // Reduce the "high-level" polynomial in case t2 is nonzero
-    t1 = gf4_nonpure_add(t2, t1);
-    t0 = gf4_nonpure_add(t2, t0);
+    // printf("f:\n");
+    // print_poly(f);
+    // printf("\n");
+    // printf("g:\n");
+    // print_poly(g);
+    // printf("\n");
+    // printf("result:\n");
+    // hl_poly test = {t1, t0};
+
+    // print_poly(test);
+    // printf("\n");
 
     hl_poly res = {t1, t0};
     return res;
