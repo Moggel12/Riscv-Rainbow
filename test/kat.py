@@ -24,11 +24,11 @@ RAINBOW(16,36,32,32) - classic signature = '''
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Script to test implementations")
     parser.add_argument("-u", "--uart", help="UART Device", required=True)
-    parser.add_argument("-b", "--baud", help="BAUD Rate", default=115200, type=int)
+    parser.add_argument("-r", "--rate", help="BAUD Rate", default=115200, type=int)
     parser.add_argument("-i", "--implementation", help="The version of Rainbow to compare against (Optimized, Reference, etc.). standard is the reference implementation", type=str)
     parser.add_argument("-c", "--customkat", help="Use a custom KAT folder (id) for testing (includes signature file, bad signature file, message file, key files and the random seed file). If not specified, the script generates a KAT at random for testing", type=str)
     parser.add_argument("-w", "--wrongsign", help="Use the wrong signature for testing", default=False, type=bool)
-    parser.add_argument("-t", "--test", help="True if testing correctness instead of benchmarking", default=True, type=bool)
+    parser.add_argument("-b", "--bench", help="Set if benchmarking", default=False, action='store_true')
     parser.add_argument("-f", "--function", help="What functionality to test (genkey/verify/sign)", type=str, default="verify")
     return parser.parse_args()
 
@@ -63,7 +63,7 @@ def run_ref_sign(implementation, kat_id):
 def test_gen(args):
     seed = get_kat_file(args.kat_id, "rseed", "rb") 
     pk, sk = args.keys
-    with serial.Serial(args.uart, args.baud) as ser:
+    with serial.Serial(args.uart, args.rate) as ser:
         bytearr = bytearray(seed)
         ser.flushInput()
         try:
@@ -85,7 +85,7 @@ def test_sign(args):
     signature = re.search(r"(?<== )\w*", get_kat_file(args.kat_id, "signature", "r")).group(0)
     signature_b = bytes.fromhex(signature)
     message = get_kat_file(args.kat_id, "message", "r")
-    with serial.Serial(args.uart, args.baud) as ser:
+    with serial.Serial(args.uart, args.rate) as ser:
         ser.flushInput()
         try:
             for i in range(sk_size):
@@ -106,7 +106,7 @@ def test_verify(args):
     signature = get_kat_file(args.kat_id, "signature", "r") if not args.wrongsign else get_kat_file(args.kat_id, "bad_signature", "r")
     signature = re.search(r"(?<== )\w*", signature).group(0)
     ref_verified = run_ref_verify(args.implementation, args.kat_id)
-    with serial.Serial(args.uart, args.baud) as ser:
+    with serial.Serial(args.uart, args.rate) as ser:
         ser.flushInput()
         try:
             for i in range(pk_size):
@@ -121,7 +121,8 @@ def test_verify(args):
                 ser.write([sign_b[i]])
             # Read output
             data = read_uart(ser)
-            check_verify(data, args.wrongsign, ref_verified)
+            # print(data)
+            check_verify(data, args.wrongsign, ref_verified, args)
         except TimeoutError:
             print("Timed out!")
 
@@ -129,17 +130,28 @@ def test_verify(args):
 ## Helpers for testing ##
 #########################
 
-def check_verify(data, wrong_signature, ref_verified):
+def check_verify(data, wrong_signature, ref_verified, args):
     if wrong_signature:
         if data["Status"] == "Success":
             print("Houston, we've had a problem here")
         else:
             print("Bad signature did not work (phew)")
     else:
-        if data["Status"] and ref_verified:
-            print("Verification success!")
-        else:
-            print("These aren't the droids you are looking for.")
+        verify_success(data, ref_verified, args)
+
+def verify_success(data, ref_verified, args):
+    if (data["Status"] == "Success") and ref_verified:
+        print("Verification success!")
+        with open(f"KAT_{args.kat_id}/verify_succes", "w") as status_file:
+            status_file.write("Success\n")
+        if args.bench:
+            with open(f"KAT_{args.kat_id}/benchmarks", "w") as bench_file:
+                bench_file.write("Cycles: " + str(data["Cycles"]) + "\n")
+                bench_file.write("Instructions: " + str(data["Instructions"]) + "\n")
+    else:
+        print("These aren't the droids you are looking for.")
+        with open(f"KAT_{args.kat_id}/verify_failure", "w") as status_file:
+            status_file.write("Failure\n")
 
 def init_send(message, ser):
     b_message = bytes(message, "ascii") 
@@ -170,10 +182,6 @@ def get_kat_file(kat_id, f, f_type):
     with open(f"KAT_{kat_id}/{f}", f_type) as msg_f:
         content = msg_f.read()
     return content
-
-# def write_bench_file(kat_id, time):
-#     with open(f"bench_{time()}_{input("Lookuptable, bitsliced or standard?")}") as bench_file:
-#         bench_file.write("Time: " + time)
 
 def get_keys(pk, sk):
     keys = None
@@ -215,9 +223,7 @@ def random_message(min_len, max_len):
     string_format = ascii_letters
     return "".join(choice(string_format) for _ in range(randint(min_len,max_len)))
 
-# Do all the things
-def main():
-    args = parse_arguments()
+def setup(args):
     if args.implementation == None:
         args.implementation = "Reference_Implementation"
     # keys = get_keys()
@@ -229,6 +235,11 @@ def main():
     else:
         args.kat_id = args.customkat
     args.keys = get_keys(f"KAT_{args.kat_id}/KATpk", f"KAT_{args.kat_id}/KATsk")
+
+# Do all the things
+def main():
+    args = parse_arguments()
+    setup(args)
     print("Using KAT with ID:", args.kat_id)
     # Setup done. Start testing
     if args.function == "genkey":
@@ -245,5 +256,6 @@ def main():
         print("Verification done")
     else:
         print("Functionality not recognized")
+
 if __name__ == "__main__":
     main()

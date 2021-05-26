@@ -1,5 +1,5 @@
 #include "slice.h"
-#include <stdio.h>
+
 // Multiplies two GF16 values, represented as polynomials with polynomial coefficients
 hl_poly gf16_prod(hl_poly f, hl_poly g) 
 { 
@@ -13,31 +13,27 @@ hl_poly gf16_prod(hl_poly f, hl_poly g)
     t1_0 = gf4_prod(f.high, g.low);
     t1_1 = gf4_prod(f.low, g.high);
     t1 = gf4_nonpure_add(t1_0, t1_1);
-    
+
     // Compute the constant term
     t0 = gf4_prod(f.low, g.low);
 
-    // Reduce the "high-level" polynomial in case t2 is nonzero
-    t1 = gf4_nonpure_add(t2, t1);
-    t0 = gf4_nonpure_add(t2, t0);
+    ll_poly temp = {{0,0}, {~0, ~0}, {0,0}};
+    
+    t2 = gf4_reduce(t2);
 
+    // Obtain t2 * (1a + 0)
+    temp = gf4_prod(temp, t2);
+
+    // Reduce t2 * (1a + 0)
+    temp = gf4_reduce(temp);
 
     // Make sure all temporary values are "pure" GF4 values
-    gf4_reduce(t2);
-    gf4_reduce(t1);
-    gf4_reduce(t0);
+    t1 = gf4_reduce(t1);
+    t0 = gf4_reduce(t0);
 
-    // printf("f:\n");
-    // print_poly(f);
-    // printf("\n");
-    // printf("g:\n");
-    // print_poly(g);
-    // printf("\n");
-    // printf("result:\n");
-    // hl_poly test = {t1, t0};
-
-    // print_poly(test);
-    // printf("\n");
+    // Reduce the "high-level" polynomial in case t2 is nonzero
+    t1 = gf4_nonpure_add(t2, t1);
+    t0 = gf4_nonpure_add(temp, t0);
 
     hl_poly res = {t1, t0};
     return res;
@@ -64,20 +60,22 @@ ll_poly gf4_nonpure_add(ll_poly f, ll_poly g)
     return res;
 }
 
-void gf4_reduce(ll_poly f) 
+ll_poly gf4_reduce(ll_poly f) 
 {
+    ll_poly res;
     for (int i = 0; i < 2; i++) 
     {
-        f.fst[i] = f.snd[i] ^ f.fst[i];
-        f.cnst[i] = f.snd[i] ^ f.cnst[i];
-        f.snd[i] ^= f.snd[i];
+        res.fst[i] = f.snd[i] ^ f.fst[i];
+        res.cnst[i] = f.snd[i] ^ f.cnst[i];
+        res.snd[i] = f.snd[i] ^ f.snd[i];
     }
+    return res;
 }
 
 // Product of two gf4 values, represented as polynomials. Expects ll_poly.snd = {0,0,0,0} and returns a "nonpure" GF4 value
 ll_poly gf4_prod(ll_poly f, ll_poly g) 
 {
-    ll_poly res = {{0,0}, {0,0}, {0,0}};
+    ll_poly res;
     for (int i = 0; i < 2; i++) 
     {
         res.snd[i] = f.fst[i] & g.fst[i];

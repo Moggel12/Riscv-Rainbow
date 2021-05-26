@@ -15,11 +15,12 @@
 #include <string.h>
 #include <stdint.h>
 
-#include <sendfn.h>
-
 #include "utils_prng.h"
 #include "utils_hash.h"
 
+#include "impl.h"
+
+#include "slice.h"
 
 #define MAX_ATTEMPT_FRMAT  128
 
@@ -150,9 +151,6 @@ int rainbow_sign( uint8_t * signature , const sk_t * sk , const uint8_t * _diges
     memset( x_o2 , 0 , _O2_BYTE );
     memset( temp_o , 0 , sizeof(temp_o) );
 
-    send_bytes("prng_seed", prng_seed, _HASH_LEN);
-    send_bytes("prng_preseed", prng_preseed, _HASH_LEN+LEN_SKSEED);
-
     // return: copy w and salt to the signature.
     if( MAX_ATTEMPT_FRMAT <= n_attempt ) return -1;
     gf256v_add( signature , w , _PUB_N_BYTE );
@@ -182,7 +180,11 @@ int _rainbow_verify( const uint8_t * digest , const uint8_t * salt , const unsig
 int rainbow_verify( const uint8_t * digest , const uint8_t * signature , const pk_t * pk )
 {
     unsigned char digest_ck[_PUB_M_BYTE];
+#if defined(SLICE_IMPL)
+    sliced_compute_publicmap(digest_ck, signature, pk->pk);
+#else
     rainbow_publicmap( digest_ck , pk->pk , signature );
+#endif
 
     return _rainbow_verify( digest , signature+_PUB_N_BYTE , digest_ck );
 }

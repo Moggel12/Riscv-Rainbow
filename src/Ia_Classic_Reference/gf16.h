@@ -5,7 +5,7 @@
 #ifndef _GF16_H_
 #define _GF16_H_
 
-#define LOOKUP_INC_ZERO
+#include "impl.h"
 
 #include <stdint.h>
 

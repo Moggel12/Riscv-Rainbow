@@ -56,16 +56,24 @@ int verifier()
     for (unsigned long long i = mlen; i < mlen + slen; i++) {
         signature[i] = hal_getc();
     }
-    
+
     send_start();
+
+    uint64_t cycles_start = hal_get_time();
+    uint64_t instr_start = hal_get_num_instr();
 
     r = crypto_sign_open( (uint8_t *) msg , &mlen , (uint8_t *) signature , mlen + CRYPTO_BYTES , pk );
 
+    uint64_t cycles_total = hal_get_time() - cycles_start;
+    uint64_t instr_total = hal_get_num_instr() - instr_start;
+
     if( 0 == r ) {
         send_string("Status", "Success" );
+        send_unsigned("Cycles", cycles_total, 10);
+        send_unsigned("Instructions", instr_total, 10);
         send_stop();
         return 0;
-    } 
+    }
     send_string("Status", "Failed");
     send_stop();
     return -1;
