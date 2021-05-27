@@ -29,7 +29,7 @@ def parse_arguments():
     parser.add_argument("-c", "--customkat", help="Use a custom KAT folder (id) for testing (includes signature file, bad signature file, message file, key files and the random seed file). If not specified, the script generates a KAT at random for testing", type=str)
     parser.add_argument("-w", "--wrongsign", help="Use the wrong signature for testing", default=False, type=bool)
     parser.add_argument("-b", "--bench", help="Set if benchmarking", default=False, action='store_true')
-    parser.add_argument("-f", "--function", help="What functionality to test (genkey/verify/sign)", type=str, default="verify")
+    parser.add_argument("-f", "--function", help="What functionality to test (genkey/verify/sign). Default is verify", type=str, default="verify")
     return parser.parse_args()
 
 ##########################
