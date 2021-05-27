@@ -23,7 +23,7 @@ $$
 $$
 or using square brackets to denote the coefficients of the innermost polynomial
 $$
-    [10]b + [11] = [10][11]
+    [10]b + [11] = [10][11].
 $$
 \subsection{Lookup tables} \label{opt:lookup}
 For a system over $GF(16)$ coefficients, the elements might take one of 16 different values. Throughout the publicmap computation, multiplication over such $GF(16)$ values are done quite a few times. However, most modern architectures, and especially the \texttt{RISC-V} architecture, have not been built to support arithmetic over such finite fields. For this reason, to test whether or not the bit-manipulation approach in the reference code is a bottleneck, I used a basic lookuptable approach to compute the multiplication result of two values in $GF(16)$.\medskip\\
@@ -48,21 +48,23 @@ The table looks as \cref{lookuptable} and lies in the \texttt{gf16.h} file, in t
     \label{lookuptable}
 \end{figure}\\
 Since each $GF(16)$ can be stored in one \texttt{uint8\_t} each, it is possible to have at most 256 (plus, potentially some overhead bytes) bytes of space used for a table like above. Given a constrained system like this, a space-speed tradeoff have to be considered thoroughly. This tradeoff will be evaluated further in \cref{evalsec}.\medskip\\
-The specific implementation uses two $GF(16)$ elements, $a$ and $b$, as input and indexes the table using $a*16 + b$, as both $a$ and $b$ are promised to maximally use four bits of memory. This, of course, needs some external checks on the amount of bits used in $a$ and $b$ to be fully secure, though it was not seen as a major insecurity on the system to be addressed immediately.\medskip\\
-Should it be a problem using \texttt{256} bytes of memory, some memory can be saved by not computing multiplications where one polynomial is of value $0$ or pure $1$s but just returning a $0$ byte to the caller, in case of $0$. When one of the polynomials is of all $1$s the case is equally as trivial, where the procedure should just return the other polynomial. The tradeoff here is then that the indexing of the table might become a bit more intricate than it is now plus an additional check is done before any actual lookup is done.\medskip\\
-Further, as the multiplication of elements occurs during the execution of \texttt{gf16v\_mul\_scalar()}, the code goes through all the $GF(16)$ elements provided in the \texttt{uint8\_t *a} array, multiplying the value of \texttt{uint8\_t gf16\_b} onto each. Due to the nature of the public map computation, the calls to this multiplication function happens quite a few times with various sizes of the array \texttt{a}. This implies that going through each element of \texttt{a} one-by-one might have some performance implications as well. This will be evaluated in \cref{evalsec}.
+The specific implementation uses two $GF(16)$ elements, $a$ and $b$, as input and indexes the table using $a*16 + b$, as both $a$ and $b$ are promised to maximally use four bits of memory. This, of course, needs some external checks on the amount of bits used in $a$ and $b$ to be fully secure, though it was not seen as a major insecurity on the system to be addressed immediately.
+\medskip\\
+Should it be a problem using \texttt{256} bytes of memory, some memory can be saved by not computing multiplications where one polynomial is of value $0$ or $0001$s but just returning a $0$ byte to the caller, in case of $0$. When one of the polynomials is of value $0001$ the case is equally as trivial, where the procedure should just return the other polynomial. The tradeoff here is then that the indexing of the table might become a bit more intricate than it is now plus an additional check is required before any actual lookup is done.
+\medskip\\
+Further, when the code calls \texttt{gf16v\_mul\_scalar()}, it goes through all the $GF(16)$ elements provided in the \texttt{uint8\_t *a} array, multiplying the value of \texttt{uint8\_t gf16\_b} onto each. Due to the nature of the public map computation, the calls to this multiplication function happens quite a few times with various sizes of the array \texttt{a}. This implies that going through each element of \texttt{a} one-by-one might have some performance implications as well. This will be evaluated in \cref{evalsec}.
 \subsection{Bitslicing} \label{opt:bitslice}
-This subsection seeks to show how bitslicing for this project was tackled on both a more theoretical level aswell as how it \textbf{WAS/SHOULD BE} implemented in reality. For \cref{bitslice:theory} the theoretical design of the system is discussed, while \cref{bitslice:implementation} provides and explanation of how it \textbf{WAS/COULD BE} brought to actual \texttt{c}-code.
+This subsection seeks to show how bitslicing for this project was tackled on both a more theoretical level aswell as how it was implemented in reality. For \cref{bitslice:theory} the theoretical design of the system is discussed, while \cref{bitslice:implementation} provides and explanation of how it was brought to actual \texttt{c}-code.
 \subsubsection{Design of a Bitsliced System for GF(16)} \label{bitslice:theory}
 To start this section off, the basic approach to multiplying two polynomials with polynomial coefficients is shown. Such a polynomial has the form
 $$
-    f = f_1b + f_0
+    f = f_1b + f_0,
 $$
 where all
 $$
     f_i = f_{i1}a+f_{i0}
 $$
-are the \emph{inner} polynomials of $f$ for $i = 0$ and $i = 1$.\\ 
+are the \emph{inner} polynomials of $f$ for $i = 0$ and $i = 1$ such that $f_1, f_0 \in GF(4)$ and $f_i1, f_i0 \in GF(2)$\\ 
 Given any two such polynomials,
 \begin{equation*}
     \begin{split}
@@ -85,7 +87,7 @@ the product can be computed by
 \end{equation}
 Using the above notions we are able to construct a theoretical plan for bitslicing.
 \medskip\\
-Now, provided some MQ system over $GF(16)$ with $64$ polynomials in total, as this project has Rainbow level $I$ in focus, the \emph{Tower-field representation} mentioned in \cref{opt:gf16comp} is suitable. Given this representation, it is possible to decompose any multiplication and addition operation over two $GF(16)$ elements into a simple $\xor$ or $\wedge$ operation, respectively. In \cref{opt:gf16comp} it was discussed that this representation of $GF(16)$ elements decomposes into \emph{layered} polynomials of $GF(2)$ elements. As elements of $GF(2)$ is a binary number system, the two formerly mentioned operations are well-defined and certainly part of typical ISAs.\medskip\\
+Now, provided some MQ system over $GF(16)$ with $64$ polynomials in total, as this project has Rainbow level $I$ in focus, the \emph{Tower-field representation} mentioned in \cref{opt:gf16comp} is suitable. Given this representation, it is possible to decompose any multiplication and addition operation over two $GF(16)$ elements into a simple $\xor$ or $\wedge$ operation, respectively. In \cref{opt:gf16comp} it was discussed that this representation of $GF(16)$ elements decomposes into \emph{layered} polynomials of $GF(2)$ elements. As elements of $GF(2)$ is a binary number system, the two formerly mentioned operations are well-defined and certainly part of typical ISAs as \texttt{xor} and \texttt{and} instructions.\medskip\\
 For the two $GF(16)$ values in Tower-field representation
 $$
     x = [11]b + [01]
@@ -113,7 +115,7 @@ where any $+$ not converted to an $\xor$ resembles a plus operation \emph{kept i
         &= (a + 1)b^2 + (a + 0)b + (0a + 1)
     \end{split}
 \end{equation*}
-As multiplying two first degree polynomials, with linear terms having nonzero coefficients, results in a quadratic term, the polynomial above has to be \emph{reduced} for it to comply with the Tower-field representation and for it to only represent a $GF(16)$ value. A reduction like this is done by \texttt{xor}'ing the quadratic term (the bits of $q$ in $qb^2$) multiplied by $1$ onto the linear term and by $a$ onto the constant term
+As multiplying two first degree polynomials, with linear terms having nonzero coefficients, results in a quadratic term, the polynomial above has to be \emph{reduced} for it to comply with the Tower-field representation and for it to only represent a $GF(16)$ value. A reduction like this is done by \texttt{xor}'ing the quadratic term (the bits of $q$ in $qb^2$) multiplied by $1$ onto the linear term and by $a$ onto the constant term. This is also what is called a \emph{reduction polynomial} which in this case takes the form of $b^2 + b + a$. Many alternatives, like $b^2 + b + 1$, exist, though the aforementioned one was chosen by the Rainbow authors. Using this, the reduction of the $GF(16)$ element is
 \begin{equation*}
     \begin{split}
         x\cdot y &= ((a + 0) + (a + 1)*(0a + 1))b + ((0a + 1) + (a + 1)*(a + 0))\\
@@ -121,19 +123,25 @@ As multiplying two first degree polynomials, with linear terms having nonzero co
         &= ((a + 0) + (a + 1))b + ((0a^2 + 0a + 1) + ((1 \xor 1)a + (1 \xor 0)))\\
         &= ((a + 0) + (a + 1))b + ((0a + 1) + (0a + 1))\\
         &= ((1 \xor 1)a + (0 \xor 1))b + ((0 \xor 0)a + (1 \xor 1))\\
-        &= (0a + 1)b + (0a + 0)
+        &= (0a + 1)b + (0a + 0).
     \end{split}
 \end{equation*}
-The reduction of the $GF(4)$ values, or the \textit{inner} polynomials, were done by \texttt{xor}'ing the quadratic term onto the linear and constant terms respectively (which was not necessary in this example as all quadratic terms were 0). These reductions can be done in different ways, though this is the one originally used by the Rainbow authors.
-\medskip\\
-To be able to provide a potential speedup for Rainbow, all operations are going to be on multiple elements at once. This means that any multiplication performed on a term of the public key $P$ and corresponding values of the signature $\textbf{z}$ will be computed using multiple terms of the public key at once. To help with this, I now denote four \emph{registers} for holding certain bits of a $GF(16)$ elements for this theoretical bitslicing construction.
+The reduction of the $GF(4)$ values, or the \textit{inner} polynomials, were done by \texttt{xor}'ing the quadratic term onto the linear and constant terms respectively (which was not necessary in this example as all quadratic terms were 0). This means that a different \emph{reduction polynomial} was used for $GF(4)$, namely $a^2 + a + 1$. Formally, we have
+$$
+    GF(4) = GF(2)[a]/(a^2 + a + 1)
+$$
+and
+$$
+    GF(16) = GF(4)[b]/(b^2 + b + a).
+$$
+To be able to provide a potential speedup for Rainbow, all operations are going to be on multiple elements at once. This means that any multiplication performed on a term of the public key $P$ and corresponding values of the signature $\textbf{z}$ will be computed using multiple terms of the public key at once. To help with this, denote four \emph{registers} for holding certain bits of a $GF(16)$ elements for this theoretical bitslicing construction.
 \begin{enumerate}
-    \item $r_3$ holding the high order bits of the "high-order polynomials"
-    \item $r_2$ holding the low-order bits of the "high-order polynomials"
-    \item $r_1$ holding the high-order bits of the "low-order polynomials"
-    \item $r_0$ holding the low-order bits of the "low-order polynomials"
+    \item $r_3$ holding the high order bits of the "high-order polynomials",
+    \item $r_2$ holding the low-order bits of the "high-order polynomials",
+    \item $r_1$ holding the high-order bits of the "low-order polynomials" and
+    \item $r_0$ holding the low-order bits of the "low-order polynomials".
 \end{enumerate}
-The usage of these can be shown by providing the toy system $P$ (though, this system is not compliant with any of the security levels of Rainbow)
+The usage of these can be shown by providing the toy system $P$ (though, this system is not compliant with any of the security levels of Rainbow):
 \begin{equation*}
     \begin{split}
         p_1(x,y) &= ([01]b + [11]) xy + ([11]b + [00]) x + ([10]b + [01]) y + ([11]b + [11])\\
@@ -141,15 +149,15 @@ The usage of these can be shown by providing the toy system $P$ (though, this sy
         p_3(x,y) &= ([00]b + [00]) xy + ([10]b + [00]) x + ([01]b + [10]) y + ([10]b + [11])
     \end{split}
 \end{equation*}
-For the $xy$ term, across polynomials of $P$, the computation uses the \emph{register}-values (visually shown as column vectors)
+For the $xy$ term, across polynomials of $P$, the computation uses the \emph{register}-values (visually shown as column vectors):
 $$
-    r_3 = \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}, r_2 = \begin{bmatrix} 1\\ 0\\ 0 \end{bmatrix}, r_1 = \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix}, r_0 = \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix}
+    r_3 = \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}, r_2 = \begin{bmatrix} 1\\ 0\\ 0 \end{bmatrix}, r_1 = \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix}, r_0 = \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix}.
 $$
-Then, any \emph{index} of $\textbf{z}$ can be expanded to a corresponding set of vectors. The value of $xy$, computed earlier, will now be used to showcase the computation upon an entire system. This kind of procedure uses an accumulator that in the end is the final result of the computation. That is, let $total$ be a vector of size three for this example. When the computation is done
+Then, any \emph{index} of $\textbf{z}$ can be expanded to a corresponding set of vectors. That is, using indices of \textbf{z} we obtain the value of the \emph{monomial} of the current term in the $MQ$ system. The value of $xy$, computed earlier, will now be used as the current monomial to showcase the computation upon an entire system. This kind of procedure uses an accumulator that in the end is the final result of the computation. That is, let $total$ be a vector of size three for this example (size $m$ in general). When the computation is done
 $$
-    P(\textbf{z}) = total
+    total = P(\textbf{z}).
 $$
-Initially we have 
+Initially we have:
 $$
     total = 
     [
@@ -180,9 +188,9 @@ $$
         [00][00]\\
         [00][00]\\
         [00][00]
-    \end{bmatrix} 
+    \end{bmatrix}.
 $$
-Provided the value $xy = [01][00]$, we can expand $xy$ such that each \textit{bit} becomes a vector in $\mathbb{R}^m$ consisting of all $1$s or all $0$s. For this value of $xy$ the corresponding \textit{expanded} values are
+Provided the value $xy = [01][00]$, we can expand $xy$ such that each \textit{bit} becomes a vector in $\mathbb{R}^m$ consisting of all $1$s or all $0$s. For this value of $xy$ the corresponding \textit{expanded} values are:
 $$
     \textbf{xy} = 
     [
@@ -213,33 +221,33 @@ $$
         [01][00]\\
         [01][00]\\
         [01][00]
-    \end{bmatrix} 
+    \end{bmatrix}.
 $$
-Once more we use the structure of the latter equality of \cref{bitslice:poly} as a template for structure the computation. Letting the coefficients of $\textbf{xy}$ be named $\textbf{xy}_3$, $\textbf{xy}_2$, $\textbf{xy}_1$, $\textbf{xy}_0$ such that
+Once more we use the structure of the latter equality of \cref{bitslice:poly} as a template for structure the computation. Letting the coefficients of $\textbf{xy}$ be named $\textbf{xy}_3$, $\textbf{xy}_2$, $\textbf{xy}_1$, $\textbf{xy}_0$ such that:
 $$
-    \textbf{xy}_3 = \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}, \textbf{xy}_2 = \begin{bmatrix} 1\\ 1\\ 1 \end{bmatrix}, \textbf{xy}_1 = \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}, \textbf{xy}_0 = \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}
+    \textbf{xy}_3 = \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}, \textbf{xy}_2 = \begin{bmatrix} 1\\ 1\\ 1 \end{bmatrix}, \textbf{xy}_1 = \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}, \textbf{xy}_0 = \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix},
 $$
-we can model the computation for the first term of the $MQ$ polynomials as
+we can model the computation for the first term of the $MQ$ polynomials as:
 \begin{equation*}
     \begin{split}
-        t_2 &= ((r_3 \wedge \textbf{xy}_3)a^2 + ((r_3 \wedge \textbf{xy}_2) \xor (r_2 \wedge \textbf{xy}_3))a + (r_2 \wedge \textbf{xy}_2))b^2\\
-        t_{10} &= ((r_3 \wedge \textbf{xy}_1)a^2 + ((r_3 \wedge \textbf{xy}_0) \xor (r_2 \wedge \textbf{xy}_1))a + (r_2 \wedge \textbf{xy}_0))b\\
-        t_{11} &= ((r_1 \wedge \textbf{xy}_3)a^2 + ((r_1 \wedge \textbf{xy}_2) \xor (r_0 \wedge \textbf{xy}_3))a + (r_0 \wedge \textbf{xy}_2))b\\
-        t_0 &= ((r_1 \wedge \textbf{xy}_1)a^2 + ((r_1 \wedge \textbf{xy}_0) \xor (r_0 \wedge \textbf{xy}_1))a + (r_0 \wedge \textbf{xy}_0))
+        t_2 &= ((r_3 \wedge \textbf{xy}_3)a^2 + ((r_3 \wedge \textbf{xy}_2) \xor (r_2 \wedge \textbf{xy}_3))a + (r_2 \wedge \textbf{xy}_2))b^2,\\
+        t_{10} &= ((r_3 \wedge \textbf{xy}_1)a^2 + ((r_3 \wedge \textbf{xy}_0) \xor (r_2 \wedge \textbf{xy}_1))a + (r_2 \wedge \textbf{xy}_0))b,\\
+        t_{11} &= ((r_1 \wedge \textbf{xy}_3)a^2 + ((r_1 \wedge \textbf{xy}_2) \xor (r_0 \wedge \textbf{xy}_3))a + (r_0 \wedge \textbf{xy}_2))b,\\
+        t_0 &= ((r_1 \wedge \textbf{xy}_1)a^2 + ((r_1 \wedge \textbf{xy}_0) \xor (r_0 \wedge \textbf{xy}_1))a + (r_0 \wedge \textbf{xy}_0)),
     \end{split}
 \end{equation*}
-where each of these temporary \textit{inner} polymials represent a term of the \textit{outer} polynomial. The logic-operations of \texttt{xor} and \texttt{and} is then done index-wise across column vectors and term-wise across polynomials. An example is the computation of $t_1 = t_{10} \xor t_{11}$ where the computations are done like so
+where each of these temporary \textit{inner} polymials represent a term of the \textit{outer} polynomial. The logic-operations of \texttt{xor} and \texttt{and} is then done index-wise across column vectors and term-wise across polynomials. An example is the computation of $t_1 = t_{10} \xor t_{11}$ where the computations are done like so:
 \begin{equation*}
     \begin{split}
-        t_{10} &= ((\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix})a^2 + ((\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}) \xor (\begin{bmatrix} 1\\ 0\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}))a + (\begin{bmatrix} 1\\ 0\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}))b\\
-        t_{10} &= (\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}a^2 + \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}a + \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix})b\\
-        t_{11} &= ((\begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix})a^2 + ((\begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 1\\ 1\\ 1 \end{bmatrix}) \xor (\begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}))a + (\begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 1\\ 1\\ 1 \end{bmatrix}))b\\
-        t_{11} &= (\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}a^2 + \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix}a + \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix})b\\
-        t_1 &= ((\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix} \xor \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix})a^2 + (\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix} \xor \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix})a + (\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix} \xor \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix}))b\\
-        t_1 &= (\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}a^2 + \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix}a + \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix})b
+        t_{10} &= ((\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix})a^2 + ((\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}) \xor (\begin{bmatrix} 1\\ 0\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}))a + (\begin{bmatrix} 1\\ 0\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}))b,\\
+        t_{10} &= (\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}a^2 + \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}a + \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix})b,\\
+        t_{11} &= ((\begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix})a^2 + ((\begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 1\\ 1\\ 1 \end{bmatrix}) \xor (\begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}))a + (\begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix} \wedge \begin{bmatrix} 1\\ 1\\ 1 \end{bmatrix}))b,\\
+        t_{11} &= (\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}a^2 + \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix}a + \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix})b,\\
+        t_1 &= ((\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix} \xor \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix})a^2 + (\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix} \xor \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix})a + (\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix} \xor \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix}))b,\\
+        t_1 &= (\begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}a^2 + \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix}a + \begin{bmatrix} 1\\ 1\\ 0 \end{bmatrix})b.
     \end{split}
 \end{equation*}
-Once the temporary values have been computed they potentially need to be reduced, to remove any quadratic term. The first reduction done is on the $GF(4)$ elements, namely the polynomials over $a$. This is done, as specified earlier, by \texttt{xor}'ing (this time index-wise in each vector/register) the $a^2$ term onto the other two terms. Following the reduction of the $GF(4)$ elements a reduction of the $GF16$ element as a whole can be reduced. To do this, the temporary value $t_2$ is multiplied by
+Once the temporary values have been computed, they potentially need to be reduced to remove any quadratic term. The first reduction done is on the $GF(4)$ elements, namely the polynomials over $a$. This is done, as specified earlier, by \texttt{xor}'ing (this time index-wise in each vector/register) the $a^2$ term onto the other two terms. Following the reduction of the $GF(4)$ elements, a reduction of the $GF16$ element as a whole can be reduced. To do this, the temporary value $t_2$ is multiplied by:
 $$
     \begin{bmatrix}
         1\\
@@ -254,9 +262,41 @@ $$
     \end{bmatrix}
 $$
 in the same fashion as when multiplying $\textbf{xy}$ with the coefficients held in the registers $r_i$, $i = 1,\dots, 4$. The result of this multiplication is then \texttt{xor}'ed onto $t_0$ term-wise. For $t_1$ the value of $t_2$ itself is \texttt{xor}'ed onto (no multiplication needed).\medskip\\
-Once the results of reducing $GF(16)$ element (the \textit{outer} polynomial) has been done, the values of $t_1$ and $t_0$ are \texttt{xor}'ed term-wise onto \textit{total}
+Once the results of reducing $GF(16)$ element (the \textit{outer} polynomial) has been done, the values of $t_1$ and $t_0$ are \texttt{xor}'ed term-wise onto \textit{total}:
 $$
-    total = [[00] \xor t_1] [[00] \xor t_0]
+    total = [[00] \xor t_1] [[00] \xor t_0].
 $$
 This way, \textit{total} accumulates the results of doing term-wise $GF(16)$ multiplications by summing the products, as well as doing it on all $m$ coefficients of the current term (across polynomials).
 \subsubsection{Implementation of the Bitsliced Scheme} \label{bitslice:implementation}
+To provide the functionality described in \cref{bitslice:theory}, three extra files were added to the implementation. These files are \texttt{slice.c}, \texttt{sliced\_arithmetic.c} and \texttt{slice.h}. An extra file is also added to the implementation which allows for easier transitioning between the three implementations (lookup tables, bitsliced and standard) through c preprocessor definitions. This file is called \texttt{impl.h} and chooses an implementation based on either it being empty or having one of the two preprocessor definitions commented out.
+\medskip\\
+The implementation of a bitsliced Rainbow scheme is done entirely through \texttt{c}-code, as one might have guessed from the files just mentioned, with no inline assembly or alike. Doing this allowed for abstracting many of the complex areas and operations of implementing bitsliced machinery. Using some, or purely, assembly code might have given an edge on performance, however, as the scope of this project is limited a purely assembly version was deemed too demanding.
+\paragraph{GF(16) representation}
+$GF(16)$ elements, represented with tower-field representation, are composed of two \texttt{c} \texttt{struct}s. The \texttt{struct}s used for this representation takes quite heavy inspiration from the graphical way the bitsliced scheme was represented in \cref{bitslice:theory} using vectors. The \texttt{struct}s used are divide into two groups: 1) \emph{high-level polynomials}, and 2) \emph{low-level polynomials}. These high- and low-level polynomials should not be mistaken with the actual polynomials of an $MQ$ system, though, instead should be seen as the \emph{outer}- and \emph{inner}-polynomials mentioned in \cref{bitslice:theory}. The actual \texttt{struct}s given in \texttt{slice.h} are \texttt{hl\_poly} and \texttt{ll\_poly}.
+\medskip\\
+A high-level polynomial, also an \emph{outer}-polynomial, would be a structure holding all four register values $r_0$, $r_1$, $r_2$ and $r_3$, or similar values like $\textbf{xy}$ from \cref{bitslice:theory}. For Rainbow level I, there are $64$ polynomials in total, meaning that one slice should be able to hold 64 different $GF(16)$ values where their individual bits are being distributed across these four vectors.
+\medskip\\
+To work with four vectors of length $64$, an \texttt{ll\_poly} \texttt{struct} is created. This creates a container for two vectors, either the two \emph{high-order} vectors or the two \emph{low-order} vectors. The $64$-dimensional vectors are then stored as \texttt{uint32\_t} arrays of length 2, in the members \texttt{snd}, \texttt{fst} and \texttt{cnst}. As can be deduced from the naming schemes, this \texttt{struct} allows for a potential \emph{quadratic} term, easing some complexities. In opposition to the \texttt{ll\_poly} being able to hold a \emph{quadratic} term, the \texttt{hl\_poly} does not allow for a \texttt{quadratic} term, but instead only holds the members \texttt{high} and \texttt{low} representing the high- and low-order bits or, alternatively, the linear and constant terms of the \textit{outer}-polynomials.
+\paragraph{Obtaining GF(16) elements}
+Slicing a column of 64 terms in the Macaulay matrix to a corresponding \texttt{hl\_poly} is built to work with the public key storage method, mentioned in \cref{section:keygen}, that the original authors of Rainbow provided. Now, denote the bits that would have gone into register $r_i$ (in \cref{bitslice:theory}) as $r_i$-bits. Using the \texttt{slice\_column()} function defined in \texttt{slice.c}, a column is stored with the $r_3$- and $r_2$-bits in the \texttt{hl\_poly.high} member, with \texttt{hl\_poly.high} being an \texttt{ll\_poly}. These bits are specifically stored in the \texttt{hl\_poly.high.fst} and \texttt{hl\_poly.high.cnst} arrays, for $r_3$- and $r_2$-bits respectively. The case for the $r_0$- and $r_1$-bits is symmetric, using the \texttt{hl\_poly.low} member instead.
+\paragraph{Arithmetic operations} Once a column has been sliced, various operations take place on the sliced column and the corresponding $x_i$ and $x_j$ values given for this term of the $MQ$ system. These operations are primarily multiplications and additions on $GF(16)$ elements. However, as seen in \cref{bitslice:theory}, these operations rely on corresponding $GF(4)$ and $GF(2)$ versions. As $GF(2)$ elements act like simple binary values, without carries, the operations are \texttt{xor} and \texttt{and}. 
+\medskip\\
+For the \emph{inner}-polynomials, the operations of addition, multiplication and reduction are implemented in the functions \texttt{gf4\_nonpure\_add()}, \texttt{gf4\_prod()} and \texttt{gf4\_reduce()}. To be able to work with non-reduced, thereby \emph{nonpure}, \emph{inner}-polynomials the addition operation is allowed to add together quadratic terms of two, in advance, \emph{nonpure} $GF(4)$ polynomials. The reasoning behind this is mostly to save a few computations when computing the $t_1$ term of the \emph{outer}-polynomial as only one reduction is then needed in the aftermath (this computation was shown in \cref{bitslice:theory}).
+\medskip\\
+In contrast to the assumptions made by the addition functionality, a multiplication of two such \emph{inner}-polynomials is done assuming that their quadratic terms are zero. This assumption is important, as any value in such a quadratic term is forgotten and only the linear and constant terms are used for the multiplication. This also means that the output \texttt{ll\_poly} of the function is a \emph{nonpure}. The operation itself is mostly as was showcased in the toy-system of \cref{bitslice:theory}, of course being altered with regard to how the 64-dimensional vectors are stored in actuality.
+\medskip\\
+Once a sum or product of two of these bitsliced representation of $GF(4)$ values have been obtained, a reduction is potentially needed. The functionality itself is implemented in \texttt{gf4\_reduce()}. This function yields the $GF(4)$ reduction by doing an bit-wise \texttt{xor} on the elements of the \texttt{uint32\_t} arrays constructing the bitsliced $GF(4)$ element. That is, the operation is simply using the \texttt{xor} operator in \texttt{c} to do bit-wise \texttt{xor}'ing on the members of the input \texttt{ll\_poly}.
+\medskip\\
+To provide the arithmetic operations required for bitsliced $GF(16)$ elements, the operations are divided into a \emph{divide and conquer}-esque approach. The addition operation is the simplest, as it simply adds together the internal \texttt{ll\_poly}s using \texttt{gf4\_nonpure\_add()}. This addition is done by adding the \emph{high}-order bits and the low-order bits, respectively. For this process it is assumed that the internal \texttt{ll\_poly}s are \emph{pure}, such that their member \texttt{uint32\_t *snd} is all zeros.
+\medskip\\
+For multiplication of bitsliced $GF(16)$ elements, the code has to take a few more steps than the simpler addition process. As can be seen in the examples in \cref{bitslice:theory}, multiplying two of these \emph{outer}-polynomials, or bitsliced $GF(16)$ elements, requires multiplying their linear terms together (linear terms over $b$ if relating to the structure used in \cref{bitslice:theory}), their constant terms, and a combination of linear and constant terms. All of this is done using the $gf4\_*$ procedures given earlier, using the \emph{high}- and \emph{low}-order polynomials (or bits, depending on perspective) of the two \emph{outer}-polynomials of the bitsliced $GF(16)$ values. The computation itself follows mostly what was seen in the examples in \cref{bitslice:theory}, though now using the structures and functions just described. Reducing the \emph{outer}-polynomial with the correct \emph{reduction polynomial} is done by also computing a temporary \texttt{hl\_poly} resembling the $(1a+0)$ that is multiplied onto $t_2$ in \cref{bitslice:theory}.
+\paragraph{Remainder of the bitslicing system}
+Some functions in the three bitslicing-related files are purely helper functions, required for easily abstracting away the process of constructing a \texttt{hl\_poly} from two \texttt{ll\_poly}s and constructing an \texttt{ll\_poly} from three \texttt{uint32\_t} arrays (quadratic, linear and constant term).
+\medskip\\
+The more interesting aspects of this bitslicing implementation is how the public key, Macaulay matrix, is \emph{sliced} such that 64 coefficients are held in one \texttt{hl\_poly} (and how it goes back), how the system actually computes $P(\textbf{z})$ and how it obtains the bitsliced \emph{expansion} of the monomial for the current term. As the process of obtaining bitsliced values was already gone through, the remainder of this section focuses on the other functionality just listed.
+\medskip\\
+Computing $P(\textbf{z})$ using bitslicing was done by going through all columns of the Macaulay matrix that the public key consist of. Using the procedure given earlier, a column is sliced by using the \texttt{slice\_column()} function, which internally calls \texttt{slice\_32()} (twice), which slices 32 consecutive public key values (given the \emph{packed} format mentioned in \cref{section:keygen}). Once an \texttt{hl\_poly} representing 64 sliced coefficients of the $MQ$ system has been constructed, the code obtains the correct $x_i$ and $x_j$ from the signature by using the same indexing as the public key does. Obtaining these values from the signature \textbf{z} then yields two \texttt{uin8\_t} values that are expanded, like $xy$ was in \cref{bitslice:theory}, and then computing the product of the two along with $x_ix_j \cdot q_{i,j}$ ($q_{i,j}$ being the sliced $GF(16)$ values of this column). These are then accumulated, by addition, in an \texttt{hl\_poly} called \texttt{total}. This procedure is implemented in \texttt{sliced\_compute\_publicmap()} in \texttt{slice.c}.
+\medskip\\
+Expanding a single $GF(16)$ value to an \texttt{hl\_poly} is a simple operation that just checks the four lowest bits of the \texttt{uint8\_t} value and fills the entire corresponding \emph{vector} (symmetrically, the \texttt{uin32\_t} arrays used in \texttt{c}-code) with either 1s or 0s depending on the value of the specific bit.
+\medskip\\
+Once the system is done computing $P(\textbf{z})$ the \texttt{uint8\_t} values (also, individual $GF(16)$ elements) of the resulting message digest are stored in \texttt{total}. To convert this to a more readable, and more intuitive, format the implementation uses the \texttt{deslice()} function from \texttt{slice.c} to \emph{deslice} \texttt{total} into an array of 64 \texttt{uint8\_t} values. Obtaining this array is done by looking at the same bit-index in all four 64-dimensional vectors (using this analogy for clarity) and constructing a \texttt{uint8\_t} from the four resulting bits. Once an array of 64 \texttt{uint8\_t} ($GF(16)$) elements is constructed, these are packed similarly to how the public key was packed such that two $GF(16)$ elements are placed in a byte, resulting in a \texttt{uint8\_t} array of size 32. This last part is to stay consistent with how the Rainbow reference code stores the digest.

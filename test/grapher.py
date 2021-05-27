@@ -74,12 +74,15 @@ def bar_avg_cycles(cycle_avg):
 
 def bar_avg_ratio(ratio_avg):
     fig, ax = plt.subplots()
-    ax.bar("Bitslice", ratio_avg["bitslice"], label="Bitslice", color="blue")
-    ax.bar("Standard", ratio_avg["standard"], label="Standard", color="red")
-    ax.bar("Lookup", ratio_avg["lookup"], label="Lookup", color="green")
+    bsl = ax.bar("Bitslice", ratio_avg["bitslice"], label="Bitslice", color="blue")
+    std = ax.bar("Standard", ratio_avg["standard"], label="Standard", color="red")
+    lkp = ax.bar("Lookup", ratio_avg["lookup"], label="Lookup", color="green")
     ax.set_ylabel("Average cycles per instruction")
     ax.set_xlabel("Implementation")
-    ax.legend()
+    ax.legend(loc="center right")
+    ax.bar_label(bsl, padding=2)
+    ax.bar_label(std, padding=2)
+    ax.bar_label(lkp, padding=2)
     fig.savefig("plots/bar_avg_ratio.png", bbox_inches="tight")
 
 def main():
@@ -93,6 +96,8 @@ def main():
     # ratio_avg = ratio_avg/1000000 # Mega cycles
     bar_avg_cycles(cycle_avg)
     bar_avg_ratio(ratio_avg)
+    # print(ratio_avg)
+    # print(cycle_avg)
 
 
 if __name__ == "__main__":
