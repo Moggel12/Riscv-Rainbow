@@ -111,6 +111,8 @@ def test_verify(args):
         try:
             for i in range(pk_size):
                 ser.write([pk[i]])
+                if (i & 0xffff) == 0xffff:
+                  print(i)
             # Send message
             init_send(message, ser)
             # Send signature
@@ -148,6 +150,8 @@ def verify_success(data, ref_verified, args):
             with open(f"KAT_{args.kat_id}/benchmarks", "w") as bench_file:
                 bench_file.write("Cycles: " + str(data["Cycles"]) + "\n")
                 bench_file.write("Instructions: " + str(data["Instructions"]) + "\n")
+        print("Cycles: " + str(data["Cycles"]))
+        print("Instructions: " + str(data["Instructions"]))
     else:
         print("These aren't the droids you are looking for.")
         with open(f"KAT_{args.kat_id}/verify_failure", "w") as status_file:

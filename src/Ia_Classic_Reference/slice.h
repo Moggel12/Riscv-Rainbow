@@ -64,28 +64,28 @@ void pack_gf16(uint8_t values[], uint8_t packed[]);
 void sliced_compute_publicmap(uint8_t *digest, const uint8_t *signature, const uint8_t *pk);
 
 // Slices a column of the coefficients in the Macaulay matrix
-hl_poly slice_column(const uint8_t coefficients[]);
+void slice_column(hl_poly *res, const uint8_t coefficients[]);
 
 // Reconstruct uint8_t values from sliced result
 void deslice(hl_poly res, uint8_t coefficients[]);
 
 // Product of two GF16 values
-hl_poly gf16_prod(hl_poly f, hl_poly g);
+void gf16_prod(hl_poly *res, hl_poly *f, hl_poly *g);
 
 // Sum of two GF16 values
-hl_poly gf16_add(hl_poly f, hl_poly g);
+void gf16_add(hl_poly *res, hl_poly *f, hl_poly *g);
 
 // Product of two GF4 values
-ll_poly gf4_prod(ll_poly f, ll_poly g);
+void gf4_prod(ll_poly *res, ll_poly *f, ll_poly *g);
 
 // Sum two GF4 values
-ll_poly gf4_nonpure_add(ll_poly f, ll_poly g);
+void gf4_nonpure_add(ll_poly *res, ll_poly *f, ll_poly *g);
 
 // Expand a value to an hl_poly.
-hl_poly expand_variable(uint8_t val);
+void expand_variable(hl_poly *res, uint8_t val);
 
 // Reduce a "nonpure" GF4 value to be "pure"
-ll_poly gf4_reduce(ll_poly f);
+void gf4_reduce(ll_poly *f);
 
 // Construct a low-level polynomial (coefficient of the coefficients) (GF4 value, potentially "nonpure" in the sense of Tower-field representation)
 ll_poly construct_ll_poly(uint32_t snd[], uint32_t fst[], uint32_t cnst[]);

@@ -13,6 +13,8 @@
 
 #include "api.h"
 
+#include "slice.h"
+
 // #define MAX_MESSAGE_LENGTH 128*1024
 
 int verifier();
@@ -59,6 +61,19 @@ int verifier()
 
     send_start();
 
+//#if defined(SLICE_IMPL)
+//    hl_poly pk_sliced[100*99/2];
+//    int idx = 0;
+//
+//    for (int j = 0; j < 100; j++)
+//        for (int i = j; i < 100; i++)
+//        {
+//            slice_column(&pk_sliced[idx], &(pk[(idx)*32]));
+//            idx += 1;
+//        }
+//#endif
+
+
     uint64_t cycles_start = hal_get_time();
     uint64_t instr_start = hal_get_num_instr();
 
@@ -78,3 +93,4 @@ int verifier()
     send_stop();
     return -1;
 }
+

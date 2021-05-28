@@ -46,7 +46,7 @@ void slice_32(const uint8_t *coefficients, uint32_t sliced[])
     }
 }
 
-hl_poly slice_column(const uint8_t coefficients[]) 
+void slice_column(hl_poly *res, const uint8_t coefficients[]) 
 {
     uint32_t sliced_upper32[4] = {0, 0, 0, 0};
     uint32_t sliced_lower32[4] = {0, 0, 0, 0};
@@ -55,13 +55,25 @@ hl_poly slice_column(const uint8_t coefficients[])
 
     slice_32(coefficients + 16, sliced_lower32);
 
-    uint32_t zeros[4] = {0, 0, 0, 0};
-    uint32_t high_fst[2] = {sliced_upper32[3], sliced_lower32[3]};
-    uint32_t high_cnst[2] = {sliced_upper32[2], sliced_lower32[2]};
-    uint32_t low_fst[2] = {sliced_upper32[1], sliced_lower32[1]};
-    uint32_t low_cnst[2] = {sliced_upper32[0], sliced_lower32[0]};
+    res->high.fst[0] = sliced_upper32[3];
+    res->high.fst[1] = sliced_lower32[3];
 
-    return construct_hl_poly(construct_ll_poly(zeros, high_fst, high_cnst), construct_ll_poly(zeros, low_fst, low_cnst));
+    res->high.cnst[0] = sliced_upper32[2];
+    res->high.cnst[1] = sliced_lower32[2];
+
+    res->low.fst[0] = sliced_upper32[1];
+    res->low.fst[1] = sliced_lower32[1];
+
+    res->low.cnst[0] = sliced_upper32[0];
+    res->low.cnst[1] = sliced_lower32[0];
+
+//    uint32_t zeros[4] = {0, 0, 0, 0};
+//    uint32_t high_fst[2] = {sliced_upper32[3], sliced_lower32[3]};
+//    uint32_t high_cnst[2] = {sliced_upper32[2], sliced_lower32[2]};
+//    uint32_t low_fst[2] = {sliced_upper32[1], sliced_lower32[1]};
+//    uint32_t low_cnst[2] = {sliced_upper32[0], sliced_lower32[0]};
+//
+//    return construct_hl_poly(construct_ll_poly(zeros, high_fst, high_cnst), construct_ll_poly(zeros, low_fst, low_cnst));
 }
 
 void deslice(hl_poly res, uint8_t coefficients[]) 
@@ -119,18 +131,41 @@ void deslice(hl_poly res, uint8_t coefficients[])
 void sliced_compute_publicmap(uint8_t *digest, const uint8_t *signature, const uint8_t *pk)
 {
     uint8_t res[64];
-    hl_poly total = expand_variable(0);
+
+    //hl_poly exp_sig[100];
     uint32_t idx = 0, i, j;
+
+    //for (j = 0; j < 100; j++)
+   //   exp_sig[j] = expand_variable(gf16v_get_ele(signature, j));
+
+    hl_poly total;
+    expand_variable(&total, 0);
+
     for (j = 0; j < 100; j++)
     {
         for (i = j; i < 100; i++)
         {
-            hl_poly current = slice_column(&(pk[(idx++)*32]));
+            //hl_poly *current = &(((hl_poly*)pk)[idx++]);
+            hl_poly current;
+            slice_column(&current, &(pk[(idx++)*32]));
+
+            //uint8_t xi = gf16v_get_ele(signature, i);
+            //uint8_t xj = gf16v_get_ele(signature, j);
+            //hl_poly x_ix_j = gf16_prod(expand_variable(xi), expand_variable(xj));
+
+            //hl_poly x_ix_j = gf16_prod(exp_sig[i], exp_sig[j]);
+
             uint8_t xi = gf16v_get_ele(signature, i);
             uint8_t xj = gf16v_get_ele(signature, j);
-            hl_poly x_ix_j = gf16_prod(expand_variable(xi), expand_variable(xj));
-            hl_poly prod = gf16_prod(current, x_ix_j);
-            total = gf16_add(prod, total);
+
+            uint8_t tmp = gf16_mul(xi, xj);
+
+            hl_poly x_ix_j;
+            expand_variable(&x_ix_j, tmp);
+             
+            hl_poly prod;
+            gf16_prod(&prod, &current, &x_ix_j);
+            gf16_add(&total, &prod, &total);
         }
     }
     deslice(total, res);
@@ -138,17 +173,17 @@ void sliced_compute_publicmap(uint8_t *digest, const uint8_t *signature, const u
 }
 
 
-hl_poly expand_variable(uint8_t val) 
+void expand_variable(hl_poly *res, uint8_t val) 
 {
     uint32_t filler;
-    uint32_t static_arr[2] = {0,0};
-    uint32_t high_fst[2];
-    uint32_t high_cnst[2];
-    uint32_t low_fst[2];
-    uint32_t low_cnst[2];
+//    uint32_t static_arr[2] = {0,0};
+//    uint32_t high_fst[2];
+//    uint32_t high_cnst[2];
+//    uint32_t low_fst[2];
+//    uint32_t low_cnst[2];
 
     // Only used for easy indexing
-    uint32_t *all_vals[4] = {low_cnst, low_fst, high_cnst, high_fst};
+    uint32_t *all_vals[4] = {res->low.cnst, res->low.fst, res->high.cnst, res->high.fst};
 
     for (uint32_t i = 0; i < 4; i++) 
     {
@@ -163,29 +198,28 @@ hl_poly expand_variable(uint8_t val)
             *(all_vals[i] + j) = filler;
         }
     }
-    ll_poly high = construct_ll_poly(static_arr, high_fst, high_cnst);
-    ll_poly low = construct_ll_poly(static_arr, low_fst, low_cnst);
-    hl_poly res = construct_hl_poly(high, low);
-    return res;
+//    ll_poly high = construct_ll_poly(static_arr, high_fst, high_cnst);
+//    ll_poly low = construct_ll_poly(static_arr, low_fst, low_cnst);
+//    hl_poly res = construct_hl_poly(high, low);
+//    return res;
 }
 
-ll_poly construct_ll_poly(uint32_t snd[], uint32_t fst[], uint32_t cnst[]) 
-{
-    ll_poly res;
-    int i;
-    for (i = 0; i < 2; i++) 
-    {
-        res.snd[i] = snd[i];
-        res.fst[i] = fst[i];
-        res.cnst[i] = cnst[i];
-    }
-    return res;
-}
+// ll_poly construct_ll_poly(uint32_t snd[], uint32_t fst[], uint32_t cnst[]) 
+// {
+//     ll_poly res;
+//     int i;
+//     for (i = 0; i < 2; i++) 
+//     {
+//         res.snd[i] = snd[i];
+//         res.fst[i] = fst[i];
+//         res.cnst[i] = cnst[i];
+//     }
+//     return res;
+// }
+// 
+// void construct_hl_poly(hl_poly *res, ll_poly h, ll_poly l) 
+// {
+//     res->high = h;
+//     res->low = l;
+// }
 
-hl_poly construct_hl_poly(ll_poly h, ll_poly l) 
-{
-    hl_poly res;
-    res.high = h;
-    res.low = l;
-    return res;
-}
