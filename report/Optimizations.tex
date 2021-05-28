@@ -25,7 +25,7 @@ or using square brackets to denote the coefficients of the innermost polynomial
 $$
     [10]b + [11] = [10][11].
 $$
-\subsection{Lookup tables} \label{opt:lookup}
+\subsection{Lookup Tables} \label{opt:lookup}
 For a system over $GF(16)$ coefficients, the elements might take one of 16 different values. Throughout the publicmap computation, multiplication over such $GF(16)$ values are done quite a few times. However, most modern architectures, and especially the \texttt{RISC-V} architecture, have not been built to support arithmetic over such finite fields. For this reason, to test whether or not the bit-manipulation approach in the reference code is a bottleneck, I used a basic lookuptable approach to compute the multiplication result of two values in $GF(16)$.\medskip\\
 Computing the $16 \times 16$ table of $GF(16)$ elements was done using the original multiplication code and running it for each combination of $GF(16)$ values that exist. 
 The table looks as \cref{lookuptable} and lies in the \texttt{gf16.h} file, in the function \texttt{gf16\_mul()}.
