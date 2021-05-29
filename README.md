@@ -52,6 +52,7 @@ The protocol for sending a message or signature along with its length is
   * Send 256
   * Send 8
 * Send an ending 0
+
 If a nonzero value arrives at the device in the first step, then all subsequent bytes sent are assumed to be part of the message or signature currently being communicated. (NOTE: This protocol is not designed to be greatly secure, just one way of communicating lengths in single bytes at a time)
 
 All the above is handled by the `test/kat.py` script. A typical call for this script could be
