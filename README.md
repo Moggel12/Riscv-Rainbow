@@ -59,7 +59,7 @@ All the above is handled by the `test/kat.py` script. A typical call for this sc
 ```bash
 ./kat.py -u /dev/pts/2
 ```
- for a CPU being hooked up to  the `/dev/pts/2` device. Running the script like this will create a `KAT_<some numbers>` folder with the *Known-Answer Test* files just used. If the `-b` flag is used, the script will also benchmark the cycle count and instruction count for the implementation being tested. If you already have some `KAT_<some number>`, one such folder can tested again using `-c <some number>` where *<some number>* is the number after the underscore. By default, the *verification* scheme is used by the `kat.py` script (as this was one focus for the project) though the other functions can be tested by using `-f <genkey|verify|sign>`
+ for a CPU being hooked up to  the `/dev/pts/2` device. Running the script like this will create a `KAT_<some numbers>` folder with the *Known-Answer Test* files just used. If the `-b` flag is used, the script will also benchmark the cycle count and instruction count for the implementation being tested. If you already have a `KAT_<some number>` folder, this can tested again using `-c <some number>` where `<some number>` is the number after the underscore in the folder name. By default, the *verification* scheme is used by the `kat.py` script (as this was one focus for the project) though the other functions can be tested by using `-f <genkey|verify|sign>`
   
 For more flags for the `kat.py` script, use `./kat.py --help`
   
