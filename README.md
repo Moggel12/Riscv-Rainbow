@@ -52,13 +52,14 @@ The protocol for sending a message or signature along with its length is
   * Send 256
   * Send 8
 * Send an ending 0
+
 If a nonzero value arrives at the device in the first step, then all subsequent bytes sent are assumed to be part of the message or signature currently being communicated. (NOTE: This protocol is not designed to be greatly secure, just one way of communicating lengths in single bytes at a time)
 
 All the above is handled by the `test/kat.py` script. A typical call for this script could be
 ```bash
 ./kat.py -u /dev/pts/2
 ```
- for a CPU being hooked up to  the `/dev/pts/2 device`. Running the script like this will create a `KAT_<some numbers>` folder with the *Known-Answer Test* files just used. If the `-b` flag is used, the script will also benchmark the cycle count and instruction count for the implementation being tested. If you already have some `KAT_<some number>`, one such folder can tested again using `-c <some number>` where *<some number>* is the number after the underscore. By default, the *verification* scheme is used by the `kat.py` script (as this was one focus for the project) though the other functions can be tested by using `-f <genkey|verify|sign>`
+ for a CPU being hooked up to  the `/dev/pts/2` device. Running the script like this will create a `KAT_<some numbers>` folder with the *Known-Answer Test* files just used. If the `-b` flag is used, the script will also benchmark the cycle count and instruction count for the implementation being tested. If you already have some `KAT_<some number>`, one such folder can tested again using `-c <some number>` where *<some number>* is the number after the underscore. By default, the *verification* scheme is used by the `kat.py` script (as this was one focus for the project) though the other functions can be tested by using `-f <genkey|verify|sign>`
   
 For more flags for the `kat.py` script, use `./kat.py --help`
   
