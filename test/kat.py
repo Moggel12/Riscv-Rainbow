@@ -27,7 +27,7 @@ def parse_arguments():
     parser.add_argument("-r", "--rate", help="BAUD Rate", default=115200, type=int)
     parser.add_argument("-i", "--implementation", help="The version of Rainbow to compare against (Optimized, Reference, etc.). standard is the reference implementation", type=str)
     parser.add_argument("-c", "--customkat", help="Use a custom KAT folder (id) for testing (includes signature file, bad signature file, message file, key files and the random seed file). If not specified, the script generates a KAT at random for testing", type=str)
-    parser.add_argument("-w", "--wrongsign", help="Use the wrong signature for testing", default=False, type=bool)
+    parser.add_argument("-w", "--wrongsign", help="Use the wrong signature for testing", default=False, action='store_true')
     parser.add_argument("-b", "--bench", help="Set if benchmarking", default=False, action='store_true')
     parser.add_argument("-f", "--function", help="What functionality to test (genkey/verify/sign)", type=str, default="verify")
     return parser.parse_args()
@@ -150,12 +150,13 @@ def verify_success(data, ref_verified, args):
             with open(f"KAT_{args.kat_id}/benchmarks", "w") as bench_file:
                 bench_file.write("Cycles: " + str(data["Cycles"]) + "\n")
                 bench_file.write("Instructions: " + str(data["Instructions"]) + "\n")
-        print("Cycles: " + str(data["Cycles"]))
-        print("Instructions: " + str(data["Instructions"]))
     else:
         print("These aren't the droids you are looking for.")
         with open(f"KAT_{args.kat_id}/verify_failure", "w") as status_file:
             status_file.write("Failure\n")
+
+    print("Cycles: " + str(data["Cycles"]))
+    print("Instructions: " + str(data["Instructions"]))
 
 def init_send(message, ser):
     b_message = bytes(message, "ascii") 

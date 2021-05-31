@@ -35,14 +35,14 @@ void slice_32(const uint8_t *coefficients, uint32_t sliced[])
 {
     uint32_t expanded, bit;
 
-    for (int i = 0; i < 4; i++) 
+    for (int j = 31; j >= 0; j--) 
     {
-        for (int j = 31; j >= 0; j--) 
-        {
-            expanded = (uint32_t) gf16v_get_ele(coefficients, 31-j);
-            bit = (((expanded >> i)) & ((uint32_t) 1)) << j;
-            sliced[i] = sliced[i] | bit;
-        }
+      expanded = (uint32_t) gf16v_get_ele(coefficients, 31-j);
+      for (int i = 0; i < 4; i++) 
+      {
+        bit = (((expanded >> i)) & ((uint32_t) 1)) << j;
+        sliced[i] = sliced[i] | bit;
+      }
     }
 }
 
@@ -130,46 +130,47 @@ void deslice(hl_poly res, uint8_t coefficients[])
 
 void sliced_compute_publicmap(uint8_t *digest, const uint8_t *signature, const uint8_t *pk)
 {
-    uint8_t res[64];
+  uint8_t res[64];
 
-    //hl_poly exp_sig[100];
-    uint32_t idx = 0, i, j;
+  uint32_t idx = 0, i, j;
 
-    //for (j = 0; j < 100; j++)
-   //   exp_sig[j] = expand_variable(gf16v_get_ele(signature, j));
+  hl_poly mul_bucket[16] = {0};
 
-    hl_poly total;
-    expand_variable(&total, 0);
+  uint8_t x[100];
 
-    for (j = 0; j < 100; j++)
-    {
-        for (i = j; i < 100; i++)
+  for (j = 0; j < 100; j++)
+    x[j] = gf16v_get_ele(signature, j);
+
+
+  for (j = 0; j < 100; j++)
+//    if (x[j] > 0)
+      for (i = j; i < 100; i++)
+      {
+//        if (x[i] > 0)
         {
-            //hl_poly *current = &(((hl_poly*)pk)[idx++]);
-            hl_poly current;
-            slice_column(&current, &(pk[(idx++)*32]));
+          uint8_t prod = gf16_mul(x[i], x[j]);
 
-            //uint8_t xi = gf16v_get_ele(signature, i);
-            //uint8_t xj = gf16v_get_ele(signature, j);
-            //hl_poly x_ix_j = gf16_prod(expand_variable(xi), expand_variable(xj));
+          hl_poly *current = &(((hl_poly*)pk)[idx]);
 
-            //hl_poly x_ix_j = gf16_prod(exp_sig[i], exp_sig[j]);
-
-            uint8_t xi = gf16v_get_ele(signature, i);
-            uint8_t xj = gf16v_get_ele(signature, j);
-
-            uint8_t tmp = gf16_mul(xi, xj);
-
-            hl_poly x_ix_j;
-            expand_variable(&x_ix_j, tmp);
-             
-            hl_poly prod;
-            gf16_prod(&prod, &current, &x_ix_j);
-            gf16_add(&total, &prod, &total);
+          gf16_add(&mul_bucket[prod], &mul_bucket[prod], current);
         }
-    }
-    deslice(total, res);
-    pack_gf16(res, digest);
+        idx++;
+      }
+//    else
+//      idx += 100 - j;
+
+  for (i = 2; i < 16; i++)
+  {
+    hl_poly gfi;
+    expand_variable(&gfi, i);
+
+    hl_poly prod;
+    gf16_prod(&prod, &mul_bucket[i], &gfi);
+    gf16_add(&mul_bucket[1], &mul_bucket[1], &prod);
+  }
+
+  deslice(mul_bucket[1], res);
+  pack_gf16(res, digest);
 }
 
 

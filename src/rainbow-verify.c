@@ -13,6 +13,7 @@
 
 #include "api.h"
 
+#include "impl.h"
 #include "slice.h"
 
 // #define MAX_MESSAGE_LENGTH 128*1024
@@ -61,36 +62,39 @@ int verifier()
 
     send_start();
 
-//#if defined(SLICE_IMPL)
-//    hl_poly pk_sliced[100*99/2];
-//    int idx = 0;
-//
-//    for (int j = 0; j < 100; j++)
-//        for (int i = j; i < 100; i++)
-//        {
-//            slice_column(&pk_sliced[idx], &(pk[(idx)*32]));
-//            idx += 1;
-//        }
-//#endif
+#if defined(SLICE_IMPL)
+    hl_poly pk_sliced[5050];
+    int idx = 0;
+
+    for (int j = 0; j < 100; j++)
+        for (int i = j; i < 100; i++)
+        {
+            slice_column(&pk_sliced[idx], &(pk[(idx)*32]));
+            idx += 1;
+        }
+#endif
 
 
     uint64_t cycles_start = hal_get_time();
     uint64_t instr_start = hal_get_num_instr();
 
-    r = crypto_sign_open( (uint8_t *) msg , &mlen , (uint8_t *) signature , mlen + CRYPTO_BYTES , pk );
+#if defined(SLICE_IMPL)
+    r = crypto_sign_open( (uint8_t *) msg , &mlen , (uint8_t *) signature , mlen + CRYPTO_BYTES , (unsigned char*)pk_sliced );
+#else
+    r = crypto_sign_open( (uint8_t *) msg , &mlen , (uint8_t *) signature , mlen + CRYPTO_BYTES , pk);
+#endif
 
     uint64_t cycles_total = hal_get_time() - cycles_start;
     uint64_t instr_total = hal_get_num_instr() - instr_start;
 
     if( 0 == r ) {
         send_string("Status", "Success" );
+    }
+    else
+    send_string("Status", "Failed");
         send_unsigned("Cycles", cycles_total, 10);
         send_unsigned("Instructions", instr_total, 10);
         send_stop();
         return 0;
-    }
-    send_string("Status", "Failed");
-    send_stop();
-    return -1;
 }
 
