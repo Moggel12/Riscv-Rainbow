@@ -11,7 +11,7 @@ $$
 $$
 such that the \emph{outermost} polynomial is linear over variable $b$ and the two \emph{innermost} are linear over the variable $a$. This is the same as expressing a $GF(16)$ element as a first-degree polynomial with first degree polynomials as coefficients. Representing a $GF(16)$ value this way is also called \emph{Tower-field representation}.
 \medskip\\
-Using Tower-field representation for $GF(16)$ elements has the coefficients of the \emph{outermost} degree-1 polynomial be $GF(4)$ elements, which themselves are represented as the degree-1 polynomials over the variable $b$. The coefficients of the \emph{innermost} polynomial would then be $GF(2)$ elements, holding exactly a binary value.
+Using Tower-field representation for $GF(16)$ elements has the coefficients of the \emph{outermost} degree-1 polynomial be $GF(4)$ elements, which themselves are represented as the degree-1 polynomials over the variable $a$. The coefficients of the \emph{innermost} polynomial would then be $GF(2)$ elements, holding exactly a binary value.
 \medskip\\
 By the above constructions it is then clear that a $GF(16)$ value can be represented using two, layered, polynomials where the innermost has binary coefficients, also called Tower-field representation. An example of such a $GF(16)$ element could be
 $$
@@ -26,9 +26,6 @@ $$
     [10]b + [11] = [10][11].
 $$
 \subsection{Lookup Tables} \label{opt:lookup}
-For a system over $GF(16)$ coefficients, the elements might take one of 16 different values. Throughout the publicmap computation, multiplication over such $GF(16)$ values are done quite a few times. However, most modern architectures, and especially the \texttt{RISC-V} architecture, have not been built to support arithmetic over such finite fields. For this reason, to test whether or not the bit-manipulation approach in the reference code is a bottleneck, I used a basic lookuptable approach to compute the multiplication result of two values in $GF(16)$.\medskip\\
-Computing the $16 \times 16$ table of $GF(16)$ elements was done using the original multiplication code and running it for each combination of $GF(16)$ values that exist. 
-The table looks as \cref{lookuptable} and lies in the \texttt{gf16.h} file, in the function \texttt{gf16\_mul()}.
 \begin{figure}[t]
     \centering
     \begin{tabular}{|c|c|c|c|c|c|c|}
@@ -46,17 +43,19 @@ The table looks as \cref{lookuptable} and lies in the \texttt{gf16.h} file, in t
     \end{tabular}
     \caption{A brief view at some of the lookuptable elements}
     \label{lookuptable}
-\end{figure}\\
-Since each $GF(16)$ can be stored in one \texttt{uint8\_t} each, it is possible to have at most 256 (plus, potentially some overhead bytes) bytes of space used for a table like above. Given a constrained system like this, a space-speed tradeoff have to be considered thoroughly. This tradeoff will be evaluated further in \cref{evalsec}.\medskip\\
-The specific implementation uses two $GF(16)$ elements, $a$ and $b$, as input and indexes the table using $a*16 + b$, as both $a$ and $b$ are promised to maximally use four bits of memory. This, of course, needs some external checks on the amount of bits used in $a$ and $b$ to be fully secure, though it was not seen as a major insecurity on the system to be addressed immediately.
+\end{figure}
+For a system over $GF(16)$ coefficients, the elements might take one of 16 different values. Throughout the publicmap computation, multiplication over such $GF(16)$ values are done quite a few times. However, most modern architectures, and especially the \texttt{RISC-V} architecture, have not been built to support arithmetic over such finite fields. For this reason, to test whether or not the bit-manipulation approach in the reference code is a bottleneck, I used a basic lookuptable approach to compute the multiplication result of two values in $GF(16)$.\medskip\\
+Computing the $16 \times 16$ table of $GF(16)$ elements was done using the original multiplication code and running it for each combination of $GF(16)$ values that exist. The table looks as \cref{lookuptable} and lies in the \texttt{gf16.h} file, in the function \texttt{gf16\_mul()}.\medskip\\
+Since each $GF(16)$ can be stored in one \texttt{uint8\_t}, it is possible to have at most 256 (plus, potentially some overhead bytes) bytes of space used for a table like above. Given a constrained system like this, a space-speed tradeoff have to be considered thoroughly. This tradeoff will be evaluated further in \cref{evalsec}.\medskip\\
+The specific implementation uses two $GF(16)$ elements, $a$ and $b$, as input and indexes the table using $a \cdot 16 + b$, as both $a$ and $b$ are promised to maximally use four bits of memory. This, of course, needs some external checks on the amount of bits used in $a$ and $b$ to be fully secure, though it was not seen as a major insecurity on the system to be addressed immediately.
 \medskip\\
 Should it be a problem using \texttt{256} bytes of memory, some memory can be saved by not computing multiplications where one polynomial is of value $0$ but just returning a $0$ byte to the caller. When one of the polynomials is of value $1$, the case is equally as trivial, where the procedure should just return the other polynomial. The tradeoff here is then that the indexing of the table might become a bit more intricate than it is now plus an additional check is required before any actual lookup is done.
 \medskip\\
-Further, when the code calls \texttt{gf16v\_mul\_scalar()}, it goes through all the $GF(16)$ elements provided in the \texttt{uint8\_t *a} array, multiplying the value of \texttt{uint8\_t gf16\_b} onto each. Due to the nature of the public map computation, the calls to this multiplication function happens quite a few times with various sizes of the array \texttt{a}. This implies that going through each element of \texttt{a} one-by-one might have some performance implications as well. This will be evaluated in \cref{evalsec}.
+Further, when the code calls \texttt{gf16v\_mul\_scalar()}, it goes through all the $GF(16)$ elements provided in the \texttt{uint8\_t *a} array, multiplying the value of \texttt{uint8\_t gf16\_b} onto each using \texttt{gf16\_mul()}. Due to the nature of the public map computation, the calls to this multiplication function happens quite a few times with various sizes of the array \texttt{a}. This implies that going through each element of \texttt{a} one-by-one might have some performance implications as well. This will be evaluated in \cref{evalsec}.
 \subsection{Bitslicing} \label{opt:bitslice}
-This subsection seeks to show how bitslicing for this project was tackled on both a more theoretical level aswell as how it was implemented in reality. For \cref{bitslice:theory} the theoretical design of the system is discussed, while \cref{bitslice:implementation} provides and explanation of how it was brought to actual \texttt{C}-code.
+This subsection seeks to show how bitslicing for this project was tackled on both a more theoretical level as well as how it was implemented in reality. For \cref{bitslice:theory} the theoretical design of the system is discussed, while \cref{bitslice:implementation} provides and explanation of how it was brought to actual \texttt{C}-code.
 \subsubsection{Design of a Bitsliced System for GF(16)} \label{bitslice:theory}
-To start this section off, the basic approach to multiplying two polynomials with polynomial coefficients is shown. Such a polynomial has the form
+To start this section off, the basic approach to multiplying two degree-1 polynomials with polynomial coefficients, of degree-1 as well, is shown. Such a polynomial has the form
 $$
     f = f_1b + f_0,
 $$
@@ -118,7 +117,7 @@ where any $+$ not converted to an $\xor$ resembles a plus operation \emph{kept i
 As multiplying two first degree polynomials, with linear terms having nonzero coefficients, results in a quadratic term, the polynomial above has to be \emph{reduced} for it to comply with the Tower-field representation and for it to only represent a $GF(16)$ value. A reduction like this is done by \texttt{xor}'ing the quadratic term (the bits of $q$ in $qb^2$) multiplied by $1$ onto the linear term and by $a$ onto the constant term. This is also what is called a \emph{reduction polynomial} which in this case takes the form of $b^2 + b + a$. Using this, the reduction of the $GF(16)$ element is
 \begin{equation*}
     \begin{split}
-        x\cdot y &= ((a + 0) + (a + 1)*(0a + 1))b + ((0a + 1) + (a + 1)*(a + 0))\\
+        x\cdot y &= ((a + 0) + (a + 1) \cdot (0a + 1))b + ((0a + 1) + (a + 1) \cdot (a + 0))\\
         &= ((a + 0) + (a + 1))b + ((0a^2 + 0a + 1) + (a^2 + a + 0)))\\
         &= ((a + 0) + (a + 1))b + ((0a^2 + 0a + 1) + ((1 \xor 1)a + (1 \xor 0)))\\
         &= ((a + 0) + (a + 1))b + ((0a + 1) + (0a + 1))\\
